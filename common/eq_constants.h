@@ -883,6 +883,7 @@ enum InventoryMainTypes : int16 {
 
 // yes..these are redundant... but, they help to identify and define what is actually being performed
 // plus, since they're pre-op's, they don't affect the actual binary size
+#define INDEX_BEGIN	0
 #define MAP_BEGIN	0
 #define MAIN_BEGIN	0
 #define SUB_BEGIN	0

@@ -152,36 +152,36 @@ public:
 	static void Invalidate(ItemSlot_Struct& itemSlotStruct);
 	static void Invalidate(ItemSlotShort_Struct& itemSlotStruct);
 
-	static bool IsInvalid(ItemSlot_Struct& itemSlotStruct);
-	static bool IsInvalid(ItemSlotShort_Struct& itemSlotStruct);
-	static bool IsDelete(ItemSlot_Struct& itemSlotStruct);
-	static bool IsDelete(ItemSlotShort_Struct& itemSlotStruct);
-	static bool IsMain(ItemSlot_Struct& itemSlotStruct);
-	static bool IsMain(ItemSlotShort_Struct& itemSlotStruct);
-	static bool IsSub(ItemSlot_Struct& itemSlotStruct);
-	static bool IsSub(ItemSlotShort_Struct& itemSlotStruct);
-	static bool IsMainAug(ItemSlot_Struct& itemSlotStruct);
-	static bool IsMainAug(ItemSlotShort_Struct& itemSlotStruct);
-	static bool IsSubAug(ItemSlot_Struct& itemSlotStruct);
-	static bool IsSubAug(ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsInvalid(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsInvalid(const ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsDelete(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsDelete(const ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsMain(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsMain(const ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsSub(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsSub(const ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsMainAug(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsMainAug(const ItemSlotShort_Struct& itemSlotStruct);
+	static bool IsSubAug(const ItemSlot_Struct& itemSlotStruct);
+	static bool IsSubAug(const ItemSlotShort_Struct& itemSlotStruct);
 
-	static bool IsEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2);
-	static bool IsEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2);
-	static bool IsEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2);
-	static bool IsEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2);
-	static bool IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2);
-	static bool IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2);
-	static bool IsNotEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2);
-	static bool IsNotEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2);
+	static bool IsEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2);
+	static bool IsEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2);
+	static bool IsEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2);
+	static bool IsEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2);
+	static bool IsNotEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2);
+	static bool IsNotEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2);
+	static bool IsNotEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2);
+	static bool IsNotEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2);
 
-	static void GetOwningSlot(ItemSlot_Struct& owningSlotStruct, ItemSlot_Struct& itemSlotStruct);
-	static void GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct, ItemSlotShort_Struct& itemSlotStruct);
+	static void GetOwningSlot(ItemSlot_Struct& owningSlotStruct, const ItemSlot_Struct& itemSlotStruct);
+	static void GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct, const ItemSlotShort_Struct& itemSlotStruct);
 
-	static void GetTopSlot(ItemSlot_Struct& topSlotStruct, ItemSlot_Struct& itemSlotStruct);
-	static void GetTopSlot(ItemSlotShort_Struct& topSlotStruct, ItemSlotShort_Struct& itemSlotStruct);
+	static void GetTopSlot(ItemSlot_Struct& topSlotStruct, const ItemSlot_Struct& itemSlotStruct);
+	static void GetTopSlot(ItemSlotShort_Struct& topSlotStruct, const ItemSlotShort_Struct& itemSlotStruct);
 
-	static void CopySlot(ItemSlot_Struct& copySlotStruct, ItemSlot_Struct& itemSlotStruct);				// check to see if direct assignment will copy properly
-	static void CopySlot(ItemSlotShort_Struct& copySlotStruct, ItemSlotShort_Struct& itemSlotStruct);	// check to see if direct assignment will copy properly
+	static void CopySlot(ItemSlot_Struct& copySlotStruct, const ItemSlot_Struct& itemSlotStruct);
+	static void CopySlot(ItemSlotShort_Struct& copySlotStruct, const ItemSlotShort_Struct& itemSlotStruct);
 
 	// local methods
 	void Invalidate() { ItemSlot::Invalidate(m_ItemSlotStruct); }
@@ -193,10 +193,10 @@ public:
 	bool IsMainAug() { return ItemSlot::IsMainAug(m_ItemSlotStruct); }
 	bool IsSubAug() { return ItemSlot::IsSubAug(m_ItemSlotStruct); }
 
-	bool IsEqual(ItemSlot_Struct& itemSlotStruct) { return ItemSlot::IsEqual(m_ItemSlotStruct, itemSlotStruct); }
-	bool IsEqual(ItemSlotShort_Struct& itemSlotStruct) { return ItemSlot::IsEqual(m_ItemSlotStruct, itemSlotStruct); }
-	bool IsNotEqual(ItemSlot_Struct& itemSlotStruct) { return ItemSlot::IsNotEqual(m_ItemSlotStruct, itemSlotStruct); }
-	bool IsNotEqual(ItemSlotShort_Struct& itemSlotStruct) { return ItemSlot::IsNotEqual(m_ItemSlotStruct, itemSlotStruct); }
+	bool IsEqual(const ItemSlot_Struct& itemSlotStruct) { return ItemSlot::IsEqual(m_ItemSlotStruct, itemSlotStruct); }
+	bool IsEqual(const ItemSlotShort_Struct& itemSlotStruct) { return ItemSlot::IsEqual(m_ItemSlotStruct, itemSlotStruct); }
+	bool IsNotEqual(const ItemSlot_Struct& itemSlotStruct) { return ItemSlot::IsNotEqual(m_ItemSlotStruct, itemSlotStruct); }
+	bool IsNotEqual(const ItemSlotShort_Struct& itemSlotStruct) { return ItemSlot::IsNotEqual(m_ItemSlotStruct, itemSlotStruct); }
 
 	void GetOwningSlot(ItemSlot_Struct& owningSlotStruct);
 	void GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct);
@@ -204,17 +204,17 @@ public:
 	void GetTopSlot(ItemSlot_Struct& topSlotStruct);
 	void GetTopSlot(ItemSlotShort_Struct& topSlotStruct);
 
-	void GetItemSlot(ItemSlot_Struct& itemSlotStruct);
-	void GetItemSlot(ItemSlotShort_Struct& itemSlotStruct);
-	void SetItemSlot(ItemSlot_Struct& itemSlotStruct);
-	void SetItemSlot(ItemSlotShort_Struct& itemSlotStruct);
+	void GetItemSlot(ItemSlot_Struct& getSlotStruct);
+	void GetItemSlot(ItemSlotShort_Struct& getSlotStruct);
+	void SetItemSlot(const ItemSlot_Struct& itemSlotStruct);
+	void SetItemSlot(const ItemSlotShort_Struct& itemSlotStruct);
 
-	void operator = (ItemSlot_Struct& itemSlotStruct) { SetItemSlot(itemSlotStruct); }
-	void operator = (ItemSlotShort_Struct& itemSlotStruct) { SetItemSlot(itemSlotStruct); }
-	bool operator == (ItemSlot_Struct& itemSlotStruct) { return IsEqual(itemSlotStruct); }
-	bool operator == (ItemSlotShort_Struct& itemSlotStruct) { return IsEqual(itemSlotStruct); }
-	bool operator != (ItemSlot_Struct& itemSlotStruct) { return IsNotEqual(itemSlotStruct); }
-	bool operator != (ItemSlotShort_Struct& itemSlotStruct) { return IsNotEqual(itemSlotStruct); }
+	void operator = (const ItemSlot_Struct& itemSlotStruct) { SetItemSlot(itemSlotStruct); }
+	void operator = (const ItemSlotShort_Struct& itemSlotStruct) { SetItemSlot(itemSlotStruct); }
+	bool operator == (const ItemSlot_Struct& itemSlotStruct) { return IsEqual(itemSlotStruct); }
+	bool operator == (const ItemSlotShort_Struct& itemSlotStruct) { return IsEqual(itemSlotStruct); }
+	bool operator != (const ItemSlot_Struct& itemSlotStruct) { return IsNotEqual(itemSlotStruct); }
+	bool operator != (const ItemSlotShort_Struct& itemSlotStruct) { return IsNotEqual(itemSlotStruct); }
 
 private:
 	ItemSlot_Struct m_ItemSlotStruct;
@@ -301,19 +301,21 @@ public:
 	// common criteria methods
 	void SetType(HIQueryTypes queryType) { m_Type = queryType; }
 
+	// TODO: add additional flag and criteria accessors
+
+	// fields that have a valid entry of '0' use an offset that is removed during the query..and restored afterwards
 	void SetItemID(uint32 itemID) { m_ItemID = itemID; }
 	void SetLoreGroup(uint32 loreGroup) { m_LoreGroup = loreGroup; }
-	void SetItemClass(uint8 itemClass) { m_ItemClass = (itemClass + 1); }	// 0 is a valid entry..offset is used to indicate a value has been set
-	void SetItemUse(uint8 itemUse) { m_ItemUse = (itemUse + 1); }			// 0 is a valid entry..offset is used to indicate a value has been set
+	void SetItemClass(uint8 itemClass) { m_ItemClass = (itemClass + 1); }
+	void SetItemUse(uint8 itemUse) { m_ItemUse = (itemUse + 1); }
 	void SetAugmentType(uint32 augmentType) { m_AugmentType = m_AugmentType; }
-	void SetBagType(uint8 bagType) { m_BagType = (bagType + 1); }			// 0 is a valid entry..offset is used to indicate a value has been set
-
-	// TODO: add additional flag and criteria accessors
+	void SetBagType(uint8 bagType) { m_BagType = (bagType + 1); }
 
 private:
 	void execute_();
 	void execute_container_();
 	bool validate_criteria_();
+	void restore_criteria_();
 	bool check_criteria_(ItemInstance* testInstance);
 
 	MobInventory* m_Inventory;

@@ -204,7 +204,7 @@ void ItemSlot::Invalidate(ItemSlotShort_Struct& itemSlotStruct)
 	itemSlotStruct.unknown01 = NOT_USED;
 }
 
-bool ItemSlot::IsInvalid(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsInvalid(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap != INVALID_INDEX) { return false; }
 	if (itemSlotStruct.unknown02 != NOT_USED) { return false; }
@@ -216,7 +216,7 @@ bool ItemSlot::IsInvalid(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsInvalid(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsInvalid(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain != INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub != INVALID_INDEX) { return false; }
@@ -226,7 +226,7 @@ bool ItemSlot::IsInvalid(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsDelete(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsDelete(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap != INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexMain != INVALID_INDEX) { return false; }
@@ -236,7 +236,7 @@ bool ItemSlot::IsDelete(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsDelete(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsDelete(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain != INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub != INVALID_INDEX) { return false; }
@@ -245,7 +245,7 @@ bool ItemSlot::IsDelete(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsMain(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsMain(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
@@ -255,7 +255,7 @@ bool ItemSlot::IsMain(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsMain(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsMain(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub != INVALID_INDEX) { return false; }
@@ -264,7 +264,7 @@ bool ItemSlot::IsMain(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsSub(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsSub(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
@@ -274,7 +274,7 @@ bool ItemSlot::IsSub(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsSub(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsSub(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub == INVALID_INDEX) { return false; }
@@ -283,7 +283,7 @@ bool ItemSlot::IsSub(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsMainAug(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsMainAug(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
@@ -293,7 +293,7 @@ bool ItemSlot::IsMainAug(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsMainAug(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsMainAug(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub != INVALID_INDEX) { return false; }
@@ -302,7 +302,7 @@ bool ItemSlot::IsMainAug(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsSubAug(ItemSlot_Struct& itemSlotStruct)
+bool ItemSlot::IsSubAug(const ItemSlot_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMap == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
@@ -312,7 +312,7 @@ bool ItemSlot::IsSubAug(ItemSlot_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsSubAug(ItemSlotShort_Struct& itemSlotStruct)
+bool ItemSlot::IsSubAug(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (itemSlotStruct.indexMain == INVALID_INDEX) { return false; }
 	if (itemSlotStruct.indexSub == INVALID_INDEX) { return false; }
@@ -321,51 +321,51 @@ bool ItemSlot::IsSubAug(ItemSlotShort_Struct& itemSlotStruct)
 	return true;
 }
 
-bool ItemSlot::IsEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2)
+bool ItemSlot::IsEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMap != itemSlotStruct2.indexMap) { return false; }
-	if (itemSlotStruct1.unknown02 != itemSlotStruct2.unknown02) { return false; } // will probably cause issues
-	if (itemSlotStruct1.indexMain != itemSlotStruct2.indexMain) { return false; }
-	if (itemSlotStruct1.indexSub != itemSlotStruct2.indexSub) { return false; }
-	if (itemSlotStruct1.indexAug != itemSlotStruct2.indexAug) { return false; }
-	if (itemSlotStruct1.unknown01 != itemSlotStruct2.unknown01) { return false; } // will probably cause issues
+	if (itemSlotStruct_1.indexMap != itemSlotStruct_2.indexMap) { return false; }
+	if (itemSlotStruct_1.unknown02 != itemSlotStruct_2.unknown02) { return false; } // will probably cause issues
+	if (itemSlotStruct_1.indexMain != itemSlotStruct_2.indexMain) { return false; }
+	if (itemSlotStruct_1.indexSub != itemSlotStruct_2.indexSub) { return false; }
+	if (itemSlotStruct_1.indexAug != itemSlotStruct_2.indexAug) { return false; }
+	if (itemSlotStruct_1.unknown01 != itemSlotStruct_2.unknown01) { return false; } // will probably cause issues
 
 	return true;
 }
 
-bool ItemSlot::IsEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2)
+bool ItemSlot::IsEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMain != itemSlotStruct2.indexMain) { return false; }
-	if (itemSlotStruct1.indexSub != itemSlotStruct2.indexSub) { return false; }
-	if (itemSlotStruct1.indexAug != itemSlotStruct2.indexAug) { return false; }
-	if (itemSlotStruct1.unknown01 != itemSlotStruct2.unknown01) { return false; } // will probably cause issues
+	if (itemSlotStruct_1.indexMain != itemSlotStruct_2.indexMain) { return false; }
+	if (itemSlotStruct_1.indexSub != itemSlotStruct_2.indexSub) { return false; }
+	if (itemSlotStruct_1.indexAug != itemSlotStruct_2.indexAug) { return false; }
+	if (itemSlotStruct_1.unknown01 != itemSlotStruct_2.unknown01) { return false; } // will probably cause issues
 
 	return true;
 }
 
-bool ItemSlot::IsEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2)
+bool ItemSlot::IsEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2)
 {
-	return ItemSlot::IsEqual(itemSlotStruct2, itemSlotStruct1);
+	return ItemSlot::IsEqual(itemSlotStruct_2, itemSlotStruct_1);
 }
 
-bool ItemSlot::IsEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2)
+bool ItemSlot::IsEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMain != itemSlotStruct2.indexMain) { return false; }
-	if (itemSlotStruct1.indexSub != itemSlotStruct2.indexSub) { return false; }
-	if (itemSlotStruct1.indexAug != itemSlotStruct2.indexAug) { return false; }
-	if (itemSlotStruct1.unknown01 != itemSlotStruct2.unknown01) { return false; } // will probably cause issues
+	if (itemSlotStruct_1.indexMain != itemSlotStruct_2.indexMain) { return false; }
+	if (itemSlotStruct_1.indexSub != itemSlotStruct_2.indexSub) { return false; }
+	if (itemSlotStruct_1.indexAug != itemSlotStruct_2.indexAug) { return false; }
+	if (itemSlotStruct_1.unknown01 != itemSlotStruct_2.unknown01) { return false; } // will probably cause issues
 
 	return true;
 }
 
-bool ItemSlot::IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2)
+bool ItemSlot::IsNotEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMap == itemSlotStruct2.indexMap) {
-		if (itemSlotStruct1.unknown02 == itemSlotStruct2.unknown02) { // will probably cause issues
-			if (itemSlotStruct1.indexMain == itemSlotStruct2.indexMain) {
-				if (itemSlotStruct1.indexSub == itemSlotStruct2.indexSub) {
-					if (itemSlotStruct1.indexAug == itemSlotStruct2.indexAug) {
-						if (itemSlotStruct1.unknown01 == itemSlotStruct2.unknown01) { // will probably cause issues
+	if (itemSlotStruct_1.indexMap == itemSlotStruct_2.indexMap) {
+		if (itemSlotStruct_1.unknown02 == itemSlotStruct_2.unknown02) { // will probably cause issues
+			if (itemSlotStruct_1.indexMain == itemSlotStruct_2.indexMain) {
+				if (itemSlotStruct_1.indexSub == itemSlotStruct_2.indexSub) {
+					if (itemSlotStruct_1.indexAug == itemSlotStruct_2.indexAug) {
+						if (itemSlotStruct_1.unknown01 == itemSlotStruct_2.unknown01) { // will probably cause issues
 							return false;
 						}
 					}
@@ -377,12 +377,12 @@ bool ItemSlot::IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlot_Struct& ite
 	return true;
 }
 
-bool ItemSlot::IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2)
+bool ItemSlot::IsNotEqual(const ItemSlot_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMain == itemSlotStruct2.indexMain) {
-		if (itemSlotStruct1.indexSub == itemSlotStruct2.indexSub) {
-			if (itemSlotStruct1.indexAug == itemSlotStruct2.indexAug) {
-				if (itemSlotStruct1.unknown01 == itemSlotStruct2.unknown01) { // will probably cause issues
+	if (itemSlotStruct_1.indexMain == itemSlotStruct_2.indexMain) {
+		if (itemSlotStruct_1.indexSub == itemSlotStruct_2.indexSub) {
+			if (itemSlotStruct_1.indexAug == itemSlotStruct_2.indexAug) {
+				if (itemSlotStruct_1.unknown01 == itemSlotStruct_2.unknown01) { // will probably cause issues
 					return false;
 				}
 			}
@@ -392,17 +392,17 @@ bool ItemSlot::IsNotEqual(ItemSlot_Struct& itemSlotStruct1, ItemSlotShort_Struct
 	return true;
 }
 
-bool ItemSlot::IsNotEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlot_Struct& itemSlotStruct2)
+bool ItemSlot::IsNotEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlot_Struct& itemSlotStruct_2)
 {
-	return ItemSlot::IsNotEqual(itemSlotStruct2, itemSlotStruct1);
+	return ItemSlot::IsNotEqual(itemSlotStruct_2, itemSlotStruct_1);
 }
 
-bool ItemSlot::IsNotEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlotShort_Struct& itemSlotStruct2)
+bool ItemSlot::IsNotEqual(const ItemSlotShort_Struct& itemSlotStruct_1, const ItemSlotShort_Struct& itemSlotStruct_2)
 {
-	if (itemSlotStruct1.indexMain == itemSlotStruct2.indexMain) {
-		if (itemSlotStruct1.indexSub == itemSlotStruct2.indexSub) {
-			if (itemSlotStruct1.indexAug == itemSlotStruct2.indexAug) {
-				if (itemSlotStruct1.unknown01 == itemSlotStruct2.unknown01) { // will probably cause issues
+	if (itemSlotStruct_1.indexMain == itemSlotStruct_2.indexMain) {
+		if (itemSlotStruct_1.indexSub == itemSlotStruct_2.indexSub) {
+			if (itemSlotStruct_1.indexAug == itemSlotStruct_2.indexAug) {
+				if (itemSlotStruct_1.unknown01 == itemSlotStruct_2.unknown01) { // will probably cause issues
 					return false;
 				}
 			}
@@ -412,7 +412,7 @@ bool ItemSlot::IsNotEqual(ItemSlotShort_Struct& itemSlotStruct1, ItemSlotShort_S
 	return true;
 }
 
-void ItemSlot::GetOwningSlot(ItemSlot_Struct& owningSlotStruct, ItemSlot_Struct& itemSlotStruct)
+void ItemSlot::GetOwningSlot(ItemSlot_Struct& owningSlotStruct, const ItemSlot_Struct& itemSlotStruct)
 {
 	if (ItemSlot::IsSub(itemSlotStruct)) {
 		ItemSlot::CopySlot(owningSlotStruct, itemSlotStruct);
@@ -427,7 +427,7 @@ void ItemSlot::GetOwningSlot(ItemSlot_Struct& owningSlotStruct, ItemSlot_Struct&
 	}
 }
 
-void ItemSlot::GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct, ItemSlotShort_Struct& itemSlotStruct)
+void ItemSlot::GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct, const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (ItemSlot::IsSub(itemSlotStruct)) {
 		ItemSlot::CopySlot(owningSlotStruct, itemSlotStruct);
@@ -442,7 +442,7 @@ void ItemSlot::GetOwningSlot(ItemSlotShort_Struct& owningSlotStruct, ItemSlotSho
 	}
 }
 
-void ItemSlot::GetTopSlot(ItemSlot_Struct& topSlotStruct, ItemSlot_Struct& itemSlotStruct)
+void ItemSlot::GetTopSlot(ItemSlot_Struct& topSlotStruct, const ItemSlot_Struct& itemSlotStruct)
 {
 	if (ItemSlot::IsSub(itemSlotStruct) || ItemSlot::IsMainAug(itemSlotStruct) || ItemSlot::IsSubAug(itemSlotStruct)) {
 		ItemSlot::CopySlot(topSlotStruct, itemSlotStruct);
@@ -454,7 +454,7 @@ void ItemSlot::GetTopSlot(ItemSlot_Struct& topSlotStruct, ItemSlot_Struct& itemS
 	}
 }
 
-void ItemSlot::GetTopSlot(ItemSlotShort_Struct& topSlotStruct, ItemSlotShort_Struct& itemSlotStruct)
+void ItemSlot::GetTopSlot(ItemSlotShort_Struct& topSlotStruct, const ItemSlotShort_Struct& itemSlotStruct)
 {
 	if (ItemSlot::IsSub(itemSlotStruct) || ItemSlot::IsMainAug(itemSlotStruct) || ItemSlot::IsSubAug(itemSlotStruct)) {
 		ItemSlot::CopySlot(topSlotStruct, itemSlotStruct);
@@ -508,25 +508,25 @@ void ItemSlot::GetTopSlot(ItemSlotShort_Struct& topSlotStruct)
 	ItemSlot::GetTopSlot(topSlotStruct, local_struct);
 }
 
-void ItemSlot::GetItemSlot(ItemSlot_Struct& itemSlotStruct)
+void ItemSlot::GetItemSlot(ItemSlot_Struct& getSlotStruct)
 {
-	itemSlotStruct.indexMap = m_ItemSlotStruct.indexMap;
-	itemSlotStruct.unknown02 = m_ItemSlotStruct.unknown02;
-	itemSlotStruct.indexMain = m_ItemSlotStruct.indexMain;
-	itemSlotStruct.indexSub = m_ItemSlotStruct.indexSub;
-	itemSlotStruct.indexAug = m_ItemSlotStruct.indexAug;
-	itemSlotStruct.unknown01 = m_ItemSlotStruct.unknown01;
+	getSlotStruct.indexMap = m_ItemSlotStruct.indexMap;
+	getSlotStruct.unknown02 = m_ItemSlotStruct.unknown02;
+	getSlotStruct.indexMain = m_ItemSlotStruct.indexMain;
+	getSlotStruct.indexSub = m_ItemSlotStruct.indexSub;
+	getSlotStruct.indexAug = m_ItemSlotStruct.indexAug;
+	getSlotStruct.unknown01 = m_ItemSlotStruct.unknown01;
 }
 
-void ItemSlot::GetItemSlot(ItemSlotShort_Struct& itemSlotStruct)
+void ItemSlot::GetItemSlot(ItemSlotShort_Struct& getSlotStruct)
 {
-	itemSlotStruct.indexMain = m_ItemSlotStruct.indexMain;
-	itemSlotStruct.indexSub = m_ItemSlotStruct.indexSub;
-	itemSlotStruct.indexAug = m_ItemSlotStruct.indexAug;
-	itemSlotStruct.unknown01 = m_ItemSlotStruct.unknown01;
+	getSlotStruct.indexMain = m_ItemSlotStruct.indexMain;
+	getSlotStruct.indexSub = m_ItemSlotStruct.indexSub;
+	getSlotStruct.indexAug = m_ItemSlotStruct.indexAug;
+	getSlotStruct.unknown01 = m_ItemSlotStruct.unknown01;
 }
 
-void ItemSlot::SetItemSlot(ItemSlot_Struct& itemSlotStruct)
+void ItemSlot::SetItemSlot(const ItemSlot_Struct& itemSlotStruct)
 {
 	m_ItemSlotStruct.indexMap = itemSlotStruct.indexMap;
 	m_ItemSlotStruct.unknown02 = itemSlotStruct.unknown02;
@@ -536,7 +536,7 @@ void ItemSlot::SetItemSlot(ItemSlot_Struct& itemSlotStruct)
 	m_ItemSlotStruct.unknown01 = itemSlotStruct.unknown01;
 }
 
-void ItemSlot::SetItemSlot(ItemSlotShort_Struct& itemSlotStruct)
+void ItemSlot::SetItemSlot(const ItemSlotShort_Struct& itemSlotStruct)
 {
 	m_ItemSlotStruct.indexMap = INVALID_INDEX;
 	m_ItemSlotStruct.unknown02 = NOT_USED;
@@ -656,6 +656,8 @@ void HasItemQuery::Execute()
 	
 	execute_();
 
+	restore_criteria_();
+
 	if ((m_Quantity != NOT_USED) && (m_Quantity > m_QuantityFound))
 		m_ResultList.clear();
 
@@ -676,6 +678,8 @@ void HasItemQuery::ExecuteContainer()
 	if (!validate_criteria_()) { return; }
 
 	execute_container_();
+
+	restore_criteria_();
 
 	if ((m_QuantityFound > NOT_USED) && (m_QuantityFound >= m_Quantity)) {
 		m_ContainerResultList.merge(m_ContainerWorkingList);
@@ -780,7 +784,7 @@ void HasItemQuery::execute_()
 
 void HasItemQuery::execute_container_()
 {
-	for (int16 index = MAIN_BEGIN; index < m_ContainerSize; ++index) {
+	for (int16 index = INDEX_BEGIN; index < m_ContainerSize; ++index) {
 		if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
 		if (m_Container->InstanceAt(index) == nullptr) { continue; }
 
@@ -866,6 +870,24 @@ bool HasItemQuery::validate_criteria_()
 	}
 	
 	return false;
+}
+
+void HasItemQuery::restore_criteria_()
+{
+	// only needed for cases where an offset was changed in validation
+	switch (m_Type) {
+	case HIQTItemClass:
+		m_ItemClass += 1;
+		break;
+	case HIQTItemUse:
+		m_ItemUse += 1;
+		break;
+	case HIQTBagType:
+		m_BagType += 1;
+		break;
+	default:
+		break;
+	}
 }
 
 bool HasItemQuery::check_criteria_(ItemInstance* testInstance)
