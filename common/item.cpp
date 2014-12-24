@@ -702,17 +702,19 @@ void HasItemQuery::execute_()
 		if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
 		if (!m_Locations[mapIndex]) { continue; }
 
-		ItemContainer* target = m_Inventory->GetMapContainer(mapIndex);
-		if (target == nullptr)
+		ItemContainer* map_container = m_Inventory->GetMapContainer(mapIndex);
+		if (map_container == nullptr)
 			continue;
 
 		uint16 map_size = m_Inventory->GetMapSize(mapIndex);
 		for (int16 mainIndex = MAIN_BEGIN; mainIndex < map_size; ++mainIndex) { // iterate Main
 			if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
 			if ((mapIndex == MapPossessions) && ((possessions_bitmask & (1 << mainIndex)) == NOT_USED)) { continue; }
-			if (target->InstanceAt(mainIndex) == nullptr) { continue; }
 
-			ItemInstance* main_instance = target->InstanceAt(mainIndex);
+			ItemInstance* main_instance = map_container->InstanceAt(mainIndex);
+			if (main_instance == nullptr)
+				continue;
+
 			if ((!m_IgnoreMain) && check_criteria_(main_instance)) {
 				ItemSlot::Invalidate(m_SlotFound);
 				m_SlotFound.indexMap = mapIndex;
@@ -720,60 +722,73 @@ void HasItemQuery::execute_()
 				m_ResultList.push_back(m_SlotFound);
 			}
 
-			if ((!m_IgnoreMainAug) && main_instance->IsClassType(ItemClassCommon)) {
-				ItemContainer* target = main_instance->GetItemContainer();
-				if (target != nullptr) {
-					for (int16 augIndex = AUG_BEGIN; augIndex < aug_size; ++augIndex) { // iterate MainAug
-						if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
-						if (target->InstanceAt(augIndex) == nullptr) { continue; }
+			if ((!m_IgnoreMainAug) && main_instance->IsClassType(ItemClassCommon)) { // could add '&& main_instance->IsAugmentable()' to the check..if we want more control
+				ItemContainer* main_container = main_instance->GetItemContainer();
+				if (main_container == nullptr)
+					continue;
 
-						ItemInstance* aug_instance = target->InstanceAt(augIndex);
-						if (check_criteria_(aug_instance)) {
-							ItemSlot::Invalidate(m_SlotFound);
-							m_SlotFound.indexMap = mapIndex;
-							m_SlotFound.indexMain = mainIndex;
-							m_SlotFound.indexAug = augIndex;
-							m_ResultList.push_back(m_SlotFound);
-						}
+				for (int16 augIndex = AUG_BEGIN; augIndex < aug_size; ++augIndex) { // iterate MainAug
+					if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity))
+						break;
+
+					ItemInstance* aug_instance = main_container->InstanceAt(augIndex);
+					if (aug_instance == nullptr)
+						continue;
+
+					if (check_criteria_(aug_instance)) {
+						ItemSlot::Invalidate(m_SlotFound);
+						m_SlotFound.indexMap = mapIndex;
+						m_SlotFound.indexMain = mainIndex;
+						m_SlotFound.indexAug = augIndex;
+						m_ResultList.push_back(m_SlotFound);
 					}
 				}
 			}
 
-			if (main_instance->IsClassType(ItemClassContainer)) {
-				ItemContainer* target = main_instance->GetItemContainer();
-				if (target != nullptr) {
-					uint16 bag_slots = main_instance->GetItemData()->BagSlots;
-					for (int16 subIndex = SUB_BEGIN; (subIndex < sub_size) && (subIndex < bag_slots); ++subIndex) { // iterate Sub
-						if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
-						if (target->InstanceAt(subIndex) == nullptr) { continue; }
+			if (m_IgnoreSub && m_IgnoreSubAug) { continue; }
+			if (!main_instance->IsClassType(ItemClassContainer)) { continue; }
 
-						ItemInstance* sub_instance = target->InstanceAt(subIndex);
-						if ((!m_IgnoreSub) && check_criteria_(sub_instance)) {
+			ItemContainer* main_container = main_instance->GetItemContainer();
+			if (main_container == nullptr)
+				continue;
+
+			uint16 bag_slots = main_instance->GetItemData()->BagSlots;
+			for (int16 subIndex = SUB_BEGIN; (subIndex < sub_size) && (subIndex < bag_slots); ++subIndex) { // iterate Sub
+				if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity))
+					break;
+
+				ItemInstance* sub_instance = main_container->InstanceAt(subIndex);
+				if (sub_instance == nullptr)
+					continue;
+
+				if ((!m_IgnoreSub) && check_criteria_(sub_instance)) {
+					ItemSlot::Invalidate(m_SlotFound);
+					m_SlotFound.indexMap = mapIndex;
+					m_SlotFound.indexMain = mainIndex;
+					m_SlotFound.indexSub = subIndex;
+					m_ResultList.push_back(m_SlotFound);
+				}
+
+				if ((!m_IgnoreSubAug) && sub_instance->IsClassType(ItemClassCommon)) {
+					ItemContainer* sub_container = sub_instance->GetItemContainer();
+					if (sub_container == nullptr)
+						continue;
+
+					for (int16 augIndex = AUG_BEGIN; augIndex < aug_size; ++augIndex) { // iterate SubAug
+						if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity))
+							break;
+
+						ItemInstance* aug_instance = sub_container->InstanceAt(augIndex);
+						if (aug_instance == nullptr)
+							continue;
+
+						if (check_criteria_(aug_instance)) {
 							ItemSlot::Invalidate(m_SlotFound);
 							m_SlotFound.indexMap = mapIndex;
 							m_SlotFound.indexMain = mainIndex;
 							m_SlotFound.indexSub = subIndex;
+							m_SlotFound.indexAug = augIndex;
 							m_ResultList.push_back(m_SlotFound);
-						}
-
-						if ((!m_IgnoreSubAug) && sub_instance->IsClassType(ItemClassCommon)) {
-							ItemContainer* target = sub_instance->GetItemContainer();
-							if (target != nullptr) {
-								for (int16 augIndex = AUG_BEGIN; augIndex < aug_size; ++augIndex) { // iterate SubAug
-									if ((m_Quantity != NOT_USED) && (m_QuantityFound >= m_Quantity)) { break; }
-									if (target->InstanceAt(augIndex) == nullptr) { continue; }
-
-									ItemInstance* aug_instance = target->InstanceAt(augIndex);
-									if (check_criteria_(aug_instance)) {
-										ItemSlot::Invalidate(m_SlotFound);
-										m_SlotFound.indexMap = mapIndex;
-										m_SlotFound.indexMain = mainIndex;
-										m_SlotFound.indexSub = subIndex;
-										m_SlotFound.indexAug = augIndex;
-										m_ResultList.push_back(m_SlotFound);
-									}
-								}
-							}
 						}
 					}
 				}
@@ -789,9 +804,8 @@ void HasItemQuery::execute_container_()
 		if (m_Container->InstanceAt(index) == nullptr) { continue; }
 
 		ItemInstance* itemInstance = m_Container->InstanceAt(index);
-		if (check_criteria_(itemInstance)) {
+		if (check_criteria_(itemInstance))
 			m_ContainerWorkingList.push_back(index);
-		}
 	}
 }
 
