@@ -1,8 +1,17 @@
 #ifndef MERC_H
 #define MERC_H
-#include "mob.h"
-#include "zonedb.h"
+
 #include "npc.h"
+
+class Client;
+class Corpse;
+class Group;
+class Mob;
+class Raid;
+struct Item_Struct;
+struct MercTemplate;
+struct NPCType;
+struct NewSpawn_Struct;
 
 #define MERC_DEBUG 0
 #define MAXMERCS 1
@@ -83,8 +92,6 @@ public:
 	Corpse* GetGroupMemberCorpse();
 
 	// Merc Spell Casting Methods
-	virtual int32 GetActSpellDamage(uint16 spell_id, int32 value, Mob* target = nullptr);
-	virtual int32 GetActSpellHealing(uint16 spell_id, int32 value, Mob* target = nullptr);
 	virtual int32 GetActSpellCasttime(uint16 spell_id, int32 casttime);
 	virtual int32 GetActSpellCost(uint16 spell_id, int32 cost);
 	int8 GetChanceToCastBySpellType(int16 spellType);
@@ -280,8 +287,8 @@ protected:
 
 	uint16 skills[HIGHEST_SKILL+1];
 	uint32 equipment[EmuConstants::EQUIPMENT_SIZE]; //this is an array of item IDs
-	uint16 d_meele_texture1; //this is an item Material value
-	uint16 d_meele_texture2; //this is an item Material value (offhand)
+	uint16 d_melee_texture1; //this is an item Material value
+	uint16 d_melee_texture2; //this is an item Material value (offhand)
 	uint8 prim_melee_type; //Sets the Primary Weapon attack message and animation
 	uint8 sec_melee_type; //Sets the Secondary Weapon attack message and animation
 

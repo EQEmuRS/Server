@@ -16,18 +16,16 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "debug.h"
-#include "string_util.h"
-#include "item.h"
-#include "database.h"
-#include "misc.h"
-#include "races.h"
-#include "shareddb.h"
 #include "classes.h"
+#include "debug.h"
+#include "item.h"
+#include "races.h"
+#include "rulesys.h"
+#include "shareddb.h"
+#include "string_util.h"
 
 #include <limits.h>
 
-#include <sstream>
 #include <iostream>
 #include <algorithm>
 
@@ -1113,6 +1111,17 @@ ItemInst* ItemInstQueue::pop()
 	return inst;
 }
 
+// Remove item from back of queue
+ItemInst* ItemInstQueue::pop_back()
+{
+	if (m_list.size() == 0)
+		return nullptr;
+
+	ItemInst* inst = m_list.back();
+	m_list.pop_back();
+	return inst;
+}
+
 // Look at item at front of queue
 ItemInst* ItemInstQueue::peek_front() const
 {
@@ -1281,6 +1290,11 @@ int16 Inventory::PushCursor(const ItemInst& inst)
 {
 	m_cursor.push(inst.Clone());
 	return MainCursor;
+}
+
+ItemInst* Inventory::GetCursorItem()
+{
+	return m_cursor.peek_front();
 }
 
 // Swap items in inventory
@@ -2147,10 +2161,12 @@ int16 Inventory::_PutItem(int16 slot_id, ItemInst* inst)
 		m_trade[slot_id] = inst;
 		result = slot_id;
 	}
-	else {
+	else
+	{
 		// Slot must be within a bag
 		ItemInst* baginst = GetItem(Inventory::CalcSlotId(slot_id)); // Get parent bag
-		if (baginst && baginst->IsType(ItemClassContainer)) {
+		if (baginst && baginst->IsType(ItemClassContainer))
+		{
 			baginst->_PutItem(Inventory::CalcBagIdx(slot_id), inst);
 			result = slot_id;
 		}
@@ -2192,13 +2208,13 @@ int16 Inventory::_HasItem(std::map<int16, ItemInst*>& bucket, uint32 item_id, ui
 
 			for (itb = inst->_begin(); itb != inst->_end(); ++itb) {
 				ItemInst* baginst = itb->second;
-				if (baginst->GetID() == item_id) {
+				if (baginst && baginst->GetID() == item_id) {
 					quantity_found += (baginst->GetCharges() <= 0) ? 1 : baginst->GetCharges();
 					if (quantity_found >= quantity)
 						return Inventory::CalcSlotId(it->first, itb->first);
 				}
 				for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
-					if (baginst->GetAugmentItemID(i) == item_id && quantity <= 1)
+					if (baginst && baginst->GetAugmentItemID(i) == item_id && quantity <= 1)
 						return legacy::SLOT_AUGMENT; // Only one augment per slot.
 				}
 			}
@@ -2236,13 +2252,13 @@ int16 Inventory::_HasItem(ItemInstQueue& iqueue, uint32 item_id, uint8 quantity)
 
 			for (itb = inst->_begin(); itb != inst->_end(); ++itb) {
 				ItemInst* baginst = itb->second;
-				if (baginst->GetID() == item_id) {
+				if (baginst && baginst->GetID() == item_id) {
 					quantity_found += (baginst->GetCharges() <= 0) ? 1 : baginst->GetCharges();
 					if (quantity_found >= quantity)
 						return Inventory::CalcSlotId(MainCursor, itb->first);
 				}
 				for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
-					if (baginst->GetAugmentItemID(i) == item_id && quantity <= 1)
+					if (baginst && baginst->GetAugmentItemID(i) == item_id && quantity <= 1)
 						return legacy::SLOT_AUGMENT; // Only one augment per slot.
 				}
 
@@ -2336,7 +2352,7 @@ int16 Inventory::_HasItemByLoreGroup(std::map<int16, ItemInst*>& bucket, uint32 
 			if (inst->GetItem()->LoreGroup == loregroup)
 				return it->first;
 
-			ItemInst* Aug;
+			ItemInst* Aug = nullptr;
 			for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
 				Aug = inst->GetAugment(i);
 				if (Aug && Aug->GetItem()->LoreGroup == loregroup)
@@ -2351,7 +2367,7 @@ int16 Inventory::_HasItemByLoreGroup(std::map<int16, ItemInst*>& bucket, uint32 
 				if (baginst && baginst->IsType(ItemClassCommon) && baginst->GetItem()->LoreGroup == loregroup)
 					return Inventory::CalcSlotId(it->first, itb->first);
 
-				ItemInst* Aug2;
+				ItemInst* Aug2 = nullptr;
 				for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
 					Aug2 = baginst->GetAugment(i);
 					if (Aug2 && Aug2->GetItem()->LoreGroup == loregroup)
@@ -2379,7 +2395,7 @@ int16 Inventory::_HasItemByLoreGroup(ItemInstQueue& iqueue, uint32 loregroup)
 			if (inst->GetItem()->LoreGroup == loregroup)
 				return MainCursor;
 
-			ItemInst* Aug;
+			ItemInst* Aug = nullptr;
 			for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
 				Aug = inst->GetAugment(i);
 				if (Aug && Aug->GetItem()->LoreGroup == loregroup)
@@ -2395,7 +2411,7 @@ int16 Inventory::_HasItemByLoreGroup(ItemInstQueue& iqueue, uint32 loregroup)
 					return Inventory::CalcSlotId(MainCursor, itb->first);
 
 
-				ItemInst* Aug2;
+				ItemInst* Aug2 = nullptr;
 				for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
 					Aug2 = baginst->GetAugment(i);
 					if (Aug2 && Aug2->GetItem()->LoreGroup == loregroup)
@@ -2419,7 +2435,7 @@ ItemInst::ItemInst(const Item_Struct* item, int16 charges) {
 	m_item = item;
 	m_charges = charges;
 	m_price = 0;
-	m_instnodrop = false;
+	m_attuned = false;
 	m_merchantslot = 0;
 	if(m_item &&m_item->ItemClass == ItemClassCommon)
 		m_color = m_item->Color;
@@ -2436,6 +2452,7 @@ ItemInst::ItemInst(const Item_Struct* item, int16 charges) {
 	m_scaling = false;
 	m_ornamenticon = 0;
 	m_ornamentidfile = 0;
+	m_ornament_hero_model = 0;
 }
 
 ItemInst::ItemInst(SharedDatabase *db, uint32 item_id, int16 charges) {
@@ -2444,7 +2461,7 @@ ItemInst::ItemInst(SharedDatabase *db, uint32 item_id, int16 charges) {
 	m_charges = charges;
 	m_price = 0;
 	m_merchantslot = 0;
-	m_instnodrop=false;
+	m_attuned=false;
 	if(m_item && m_item->ItemClass == ItemClassCommon)
 		m_color = m_item->Color;
 	else
@@ -2460,6 +2477,7 @@ ItemInst::ItemInst(SharedDatabase *db, uint32 item_id, int16 charges) {
 	m_scaling = false;
 	m_ornamenticon = 0;
 	m_ornamentidfile = 0;
+	m_ornament_hero_model = 0;
 }
 
 ItemInst::ItemInst(ItemInstTypes use_type) {
@@ -2467,7 +2485,7 @@ ItemInst::ItemInst(ItemInstTypes use_type) {
 	m_item = nullptr;
 	m_charges = 0;
 	m_price = 0;
-	m_instnodrop = false;
+	m_attuned = false;
 	m_merchantslot = 0;
 	m_color = 0;
 
@@ -2479,6 +2497,7 @@ ItemInst::ItemInst(ItemInstTypes use_type) {
 	m_scaling = false;
 	m_ornamenticon = 0;
 	m_ornamentidfile = 0;
+	m_ornament_hero_model = 0;
 }
 
 // Make a copy of an ItemInst object
@@ -2491,7 +2510,7 @@ ItemInst::ItemInst(const ItemInst& copy)
 	m_color=copy.m_color;
 	m_merchantslot=copy.m_merchantslot;
 	m_currentslot=copy.m_currentslot;
-	m_instnodrop=copy.m_instnodrop;
+	m_attuned=copy.m_attuned;
 	m_merchantcount=copy.m_merchantcount;
 	// Copy container contents
 	iter_contents it;
@@ -2531,6 +2550,7 @@ ItemInst::ItemInst(const ItemInst& copy)
 	m_scaling = copy.m_scaling;
 	m_ornamenticon = copy.m_ornamenticon;
 	m_ornamentidfile = copy.m_ornamentidfile;
+	m_ornament_hero_model = copy.m_ornament_hero_model;
 }
 
 // Clean up container contents
@@ -2721,6 +2741,8 @@ void ItemInst::ClearByFlags(byFlagSetting is_nodrop, byFlagSetting is_norent)
 	end = m_contents.end();
 	for (; cur != end;) {
 		ItemInst* inst = cur->second;
+		if (inst == nullptr)
+			continue;
 		const Item_Struct* item = inst->GetItem();
 		del = cur;
 		++cur;
@@ -2804,19 +2826,77 @@ ItemInst* ItemInst::GetAugment(uint8 slot) const
 	return nullptr;
 }
 
-ItemInst* ItemInst::GetOrnamentationAug(int ornamentationAugtype) const
+ItemInst* ItemInst::GetOrnamentationAug(int32 ornamentationAugtype) const
 {
-	for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++) {
-		if (GetAugment(i) && m_item->AugSlotType[i] == ornamentationAugtype) {
-			const char *item_IDFile = GetAugment(i)->GetItem()->IDFile;
-			if (strncmp(item_IDFile, "IT64", strlen(item_IDFile)) == 0 || strncmp(item_IDFile, "IT63", strlen(item_IDFile)) == 0)
-				continue;
-
+	if (ornamentationAugtype > 0)
+	{
+		for (int i = AUG_BEGIN; i < EmuConstants::ITEM_COMMON_SIZE; i++)
+		{
+			if (GetAugment(i) && m_item->AugSlotType[i] == ornamentationAugtype)
+			{
+				const char *item_IDFile = GetAugment(i)->GetItem()->IDFile;
+				if (
+					(strncmp(item_IDFile, "IT64", strlen(item_IDFile)) == 0
+					|| strncmp(item_IDFile, "IT63", strlen(item_IDFile)) == 0)
+					&& GetAugment(i)->GetItem()->HerosForgeModel == 0
+					)
+				{
+					continue;
+				}
 				return this->GetAugment(i);
+			}
 		}
 	}
 
 	return nullptr;
+}
+
+uint32 ItemInst::GetOrnamentHeroModel(int32 material_slot) const {
+	uint32 HeroModel = 0;
+	if (m_ornament_hero_model > 0)
+	{
+		HeroModel = m_ornament_hero_model;
+		if (material_slot >= 0)
+		{
+			HeroModel = (m_ornament_hero_model * 100) + material_slot;
+		}
+	}
+	return HeroModel;
+}
+
+bool ItemInst::UpdateOrnamentationInfo() {
+	bool ornamentSet = false;
+
+	if (IsType(ItemClassCommon))
+	{
+		int32 ornamentationAugtype = RuleI(Character, OrnamentationAugmentType);
+		if (GetOrnamentationAug(ornamentationAugtype))
+		{
+			const Item_Struct* ornamentItem;
+			ornamentItem = GetOrnamentationAug(ornamentationAugtype)->GetItem();
+			if (ornamentItem != nullptr)
+			{
+				SetOrnamentIcon(ornamentItem->Icon);
+				SetOrnamentHeroModel(ornamentItem->HerosForgeModel);
+				if (strlen(ornamentItem->IDFile) > 2)
+				{
+					SetOrnamentationIDFile(atoi(&ornamentItem->IDFile[2]));
+				}
+				else
+				{
+					SetOrnamentationIDFile(0);
+				}
+				ornamentSet = true;
+			}
+		}
+		else
+		{
+			SetOrnamentIcon(0);
+			SetOrnamentHeroModel(0);
+			SetOrnamentationIDFile(0);
+		}
+	}
+	return ornamentSet;
 }
 
 bool ItemInst::CanTransform(const Item_Struct *ItemToTry, const Item_Struct *Container, bool AllowAll) {

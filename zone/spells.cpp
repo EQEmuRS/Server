@@ -74,9 +74,11 @@ Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
 #include "../common/skills.h"
 #include "../common/spdat.h"
 #include "../common/string_util.h"
+
 #include "quest_parser_collection.h"
 #include "string_ids.h"
 #include "worldserver.h"
+
 #include <assert.h>
 #include <math.h>
 
@@ -87,6 +89,10 @@ Copyright (C) 2001-2002 EQEMu Development Team (http://eqemu.org)
 
 #ifdef _GOTFRAGS
 	#include "../common/packet_dump_file.h"
+#endif
+
+#ifdef BOTS
+#include "bot.h"
 #endif
 
 
@@ -176,7 +182,7 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, uint16 slot,
 		BuffFadeByEffect(SE_Sanctuary);
 
 	if(IsClient()){
-		int chance = CastToClient()->GetFocusEffect(focusFcMute, spell_id);
+		int chance = CastToClient()->GetFocusEffect(focusFcMute, spell_id);//Client only
 
 		if (zone->random.Roll(chance)) {
 			Message_StringID(13, SILENCED_STRING);
@@ -1043,7 +1049,7 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, uint16 slot,
 	// Check for consumables and Reagent focus items
 	// first check for component reduction
 	if(IsClient()) {
-		int reg_focus = CastToClient()->GetFocusEffect(focusReagentCost,spell_id);
+		int reg_focus = CastToClient()->GetFocusEffect(focusReagentCost,spell_id);//Client only
 		if(zone->random.Roll(reg_focus)) {
 			mlog(SPELLS__CASTING, "Spell %d: Reagent focus item prevented reagent consumption (%d chance)", spell_id, reg_focus);
 		} else {
@@ -1189,22 +1195,29 @@ void Mob::CastedSpellFinished(uint16 spell_id, uint32 target_id, uint16 slot,
 		uint32 recastdelay = 0;
 		uint32 recasttype = 0;
 
-		for (int r = 0; r < EmuConstants::ITEM_COMMON_SIZE; r++) {
-			const ItemInst* aug_i = inst->GetAugment(r);
-
-			if(!aug_i)
-				continue;
-			const Item_Struct* aug = aug_i->GetItem();
-			if(!aug)
-				continue;
-
-			if ( aug->Click.Effect == spell_id )
-			{
-				recastdelay = aug_i->GetItem()->RecastDelay;
-				recasttype = aug_i->GetItem()->RecastType;
-				fromaug = true;
+		while (true) {
+			if (inst == nullptr)
 				break;
+
+			for (int r = AUG_BEGIN; r < EmuConstants::ITEM_COMMON_SIZE; r++) {
+				const ItemInst* aug_i = inst->GetAugment(r);
+
+				if (!aug_i)
+					continue;
+				const Item_Struct* aug = aug_i->GetItem();
+				if (!aug)
+					continue;
+
+				if (aug->Click.Effect == spell_id)
+				{
+					recastdelay = aug_i->GetItem()->RecastDelay;
+					recasttype = aug_i->GetItem()->RecastType;
+					fromaug = true;
+					break;
+				}
 			}
+
+			break;
 		}
 
 		//Test the aug recast delay
@@ -2237,7 +2250,7 @@ bool Mob::SpellFinished(uint16 spell_id, Mob *spell_target, uint16 slot, uint16 
 			{
 				recast -= GetAA(aaTouchoftheWicked) * 420;
 			}
-			int reduction = CastToClient()->GetFocusEffect(focusReduceRecastTime, spell_id);
+			int reduction = CastToClient()->GetFocusEffect(focusReduceRecastTime, spell_id);//Client only
 			if(reduction)
 				recast -= reduction;
 
@@ -3890,6 +3903,8 @@ void Mob::BuffFadeDetrimental() {
 				BuffFadeBySlot(j, false);
 		}
 	}
+	//we tell BuffFadeBySlot not to recalc, so we can do it only once when were done
+	CalcBonuses();
 }
 
 void Mob::BuffFadeDetrimentalByCaster(Mob *caster)
@@ -3910,6 +3925,8 @@ void Mob::BuffFadeDetrimentalByCaster(Mob *caster)
 			}
 		}
 	}
+	//we tell BuffFadeBySlot not to recalc, so we can do it only once when were done
+	CalcBonuses();
 }
 
 void Mob::BuffFadeBySitModifier()
@@ -4189,14 +4206,8 @@ float Mob::ResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, bool use
 
 	//Get resist modifier and adjust it based on focus 2 resist about eq to 1% resist chance
 	int resist_modifier = (use_resist_override) ? resist_override : spells[spell_id].ResistDiff;
-	if(caster->IsClient())
-	{
-		if(IsValidSpell(spell_id))
-		{
-			int focus_resist = caster->CastToClient()->GetFocusEffect(focusResistRate, spell_id);
-			resist_modifier -= 2 * focus_resist;
-		}
-	}
+	int focus_resist = caster->GetFocusEffect(focusResistRate, spell_id);
+	resist_modifier -= 2 * focus_resist;
 
 	//Check for fear resist
 	bool IsFear = false;
@@ -4580,16 +4591,13 @@ float Mob::GetAOERange(uint16 spell_id) {
 	if(range == 0)
 		range = 10;	//something....
 
-	if (IsClient()) {
-
-		if(IsBardSong(spell_id) && IsBeneficialSpell(spell_id)) {
-			//Live AA - Extended Notes, SionachiesCrescendo
-			float song_bonus = static_cast<float>(aabonuses.SongRange + spellbonuses.SongRange + itembonuses.SongRange);
-			range += range*song_bonus /100.0f;
-		}
-
-		range = CastToClient()->GetActSpellRange(spell_id, range);
+	if(IsBardSong(spell_id) && IsBeneficialSpell(spell_id)) {
+		//Live AA - Extended Notes, SionachiesCrescendo
+		float song_bonus = static_cast<float>(aabonuses.SongRange + spellbonuses.SongRange + itembonuses.SongRange);
+		range += range*song_bonus /100.0f;
 	}
+
+	range = GetActSpellRange(spell_id, range);
 
 	return(range);
 }
