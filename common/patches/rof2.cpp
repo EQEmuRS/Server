@@ -116,6 +116,72 @@ namespace RoF2
 #include "ss_define.h"
 
 // ENCODE methods
+
+
+	// RoF2 Specific Encodes Begin
+	ENCODE(OP_SendMembershipDetails)
+	{
+		ENCODE_LENGTH_EXACT(Membership_Details_Struct);
+		SETUP_DIRECT_ENCODE(Membership_Details_Struct, structs::Membership_Details_Struct);
+
+		eq->membership_setting_count = 72;
+		for (uint32 i = 0; i < emu->membership_setting_count; ++i) // 66
+		{
+			OUT(settings[i].setting_index);
+			OUT(settings[i].setting_id);
+			OUT(settings[i].setting_value);
+		}
+		// Last 6 new settings fields are all 0s on Live as of 12/29/14
+
+		eq->race_entry_count = emu->race_entry_count;
+		for (uint32 i = 0; i < emu->race_entry_count; ++i) // 15
+		{
+			OUT(membership_races[i].purchase_id);
+			OUT(membership_races[i].bitwise_entry);
+		}
+
+		eq->class_entry_count = emu->class_entry_count;
+		for (uint32 i = 0; i < emu->class_entry_count; ++i) // 15
+		{
+			OUT(membership_classes[i].purchase_id);
+			OUT(membership_classes[i].bitwise_entry);
+		}
+
+		eq->exit_url_length = emu->exit_url_length;
+		eq->exit_url_length2 = emu->exit_url_length2;
+		
+		FINISH_ENCODE();
+	}
+
+	ENCODE(OP_SendMembership)
+	{
+		ENCODE_LENGTH_EXACT(Membership_Struct);
+		SETUP_DIRECT_ENCODE(Membership_Struct, structs::Membership_Struct);
+
+		eq->membership = emu->membership;
+		eq->races = emu->races;
+		eq->classes = emu->classes;
+		eq->entrysize = 25; //emu->entrysize;
+
+		for (uint32 i = 0; i < emu->entrysize; ++i) // 21
+		{
+			OUT(entries[i]);
+		}
+		// Last 4 new entries are 0s on Live Silver as of 12/29/14
+		// Setting them each to 1 for now.
+		// This removes the "Buy Now" button from aug type 21 slots on items.
+		for (uint32 i = 21; i < 25; ++i) // 4
+		{
+			eq->entries[i] = 1;
+		}
+		
+
+		FINISH_ENCODE();
+	}
+
+	// RoF2 Specific Encodes End
+
+
 	ENCODE(OP_Action)
 	{
 		ENCODE_LENGTH_EXACT(Action_Struct);
@@ -1994,17 +2060,17 @@ namespace RoF2
 		outapp->WriteUInt32(emu->drakkin_tattoo);
 		outapp->WriteUInt32(emu->drakkin_details);
 
-		outapp->WriteUInt8(0);			// Unknown
-		outapp->WriteUInt8(0);			// Unknown
-		outapp->WriteUInt8(0);			// Unknown
-		outapp->WriteUInt8(0);			// Unknown
-		outapp->WriteUInt8(0);			// Unknown
+		outapp->WriteUInt8(0);			// Unknown 0
+		outapp->WriteUInt8(0xff);		// Unknown 0xff
+		outapp->WriteUInt8(1);			// Unknown 1
+		outapp->WriteUInt8(0xff);		// Unknown 0xff
+		outapp->WriteUInt8(1);			// Unknown 1
 
-		outapp->WriteFloat(5.0f);		// Height ?
+		outapp->WriteFloat(5.0f);		// Height
 
-		outapp->WriteFloat(3.0f);			// Unknown
-		outapp->WriteFloat(2.5f);			// Unknown
-		outapp->WriteFloat(5.5f);			// Unknown
+		outapp->WriteFloat(3.0f);		// Unknown 3.0
+		outapp->WriteFloat(2.5f);		// Unknown 2.5
+		outapp->WriteFloat(5.5f);		// Unknown 5.5
 
 		outapp->WriteUInt32(0);			// Primary ?
 		outapp->WriteUInt32(0);			// Secondary ?
@@ -2330,7 +2396,7 @@ namespace RoF2
 
 		outapp->WriteUInt64(emu->exp);		// int32 in client
 
-		outapp->WriteUInt8(0);			// Unknown - Seen 5 on Live
+		outapp->WriteUInt8(5);			// Unknown - Seen 5 on Live - Eye Height?
 
 		outapp->WriteUInt32(emu->platinum_bank);
 		outapp->WriteUInt32(emu->gold_bank);
@@ -2901,24 +2967,6 @@ namespace RoF2
 			}
 			bufptr += sizeof(structs::CharacterSelectEntry_Struct);
 		}
-
-		FINISH_ENCODE();
-	}
-
-	ENCODE(OP_SendMembership)
-	{
-		ENCODE_LENGTH_EXACT(Membership_Struct);
-		SETUP_DIRECT_ENCODE(Membership_Struct, structs::Membership_Struct);
-
-		eq->membership = emu->membership;
-		eq->races = emu->races;
-		eq->classes = emu->classes;
-		eq->entrysize = 22;
-		for (int i = 0; i<21; i++)
-		{
-			eq->entries[i] = emu->entries[i];
-		}
-		eq->entries[21] = 0;
 
 		FINISH_ENCODE();
 	}
@@ -4848,10 +4896,9 @@ namespace RoF2
 		hdr.slot_type = (merchant_slot == 0) ? slot_id.SlotType : 9; // 9 is merchant 20 is reclaim items?
 		hdr.main_slot = (merchant_slot == 0) ? slot_id.MainSlot : merchant_slot;
 		hdr.sub_slot = (merchant_slot == 0) ? slot_id.SubSlot : 0xffff;
-		hdr.unknown013 = (merchant_slot == 0) ? slot_id.AugSlot : 0xffff;
+		hdr.aug_slot = (merchant_slot == 0) ? slot_id.AugSlot : 0xffff;
 		hdr.price = inst->GetPrice();
 		hdr.merchant_slot = (merchant_slot == 0) ? 1 : inst->GetMerchantCount();
-		//hdr.merchant_slot = (merchant_slot == 0) ? 1 : 0xffffffff;
 		hdr.scaled_value = inst->IsScaling() ? inst->GetExp() / 100 : 0;
 		hdr.instance_id = (merchant_slot == 0) ? inst->GetSerialNumber() : merchant_slot;
 		hdr.unknown028 = 0;
@@ -4903,7 +4950,7 @@ namespace RoF2
 		hdrf.unknowna1 = 0xffffffff;
 		hdrf.ornamentHeroModel = heroModel;
 		hdrf.unknown063 = 0;
-		hdrf.unknowna3 = 0;
+		hdrf.Copied = 0;
 		hdrf.unknowna4 = 0xffffffff;
 		hdrf.unknowna5 = 0;
 		hdrf.ItemClass = item->ItemClass;
@@ -5053,7 +5100,7 @@ namespace RoF2
 		memset(&isbs, 0, sizeof(RoF2::structs::ItemSecondaryBodyStruct));
 
 		isbs.augtype = item->AugType;
-		isbs.augdistiller = 65535;
+		isbs.augrestrict2 = -1;
 		isbs.augrestrict = item->AugRestrict;
 
 		for (int x = AUG_BEGIN; x < consts::ITEM_COMMON_SIZE; x++)
@@ -5297,9 +5344,21 @@ namespace RoF2
 		iqbs.HealAmt = item->HealAmt;
 		iqbs.SpellDmg = item->SpellDmg;
 		iqbs.clairvoyance = item->Clairvoyance;
-		iqbs.unknown28 = 0;
-		iqbs.unknown30 = 0;
-		iqbs.unknown37a = 0;
+
+		//unknown18;	//Power Source Capacity or evolve filename?
+		//evolve_string; // Some String, but being evolution related is just a guess
+
+		iqbs.Heirloom = 0;
+		iqbs.Placeable = 0;
+
+		iqbs.unknown28 = -1;
+		iqbs.unknown30 = -1;
+
+		iqbs.NoZone = 0;
+		iqbs.NoGround = 0;
+		iqbs.unknown37a = 0;	// (guessed position) New to RoF2
+		iqbs.unknown38 = 0;
+
 		iqbs.unknown39 = 1;
 
 		iqbs.subitem_count = 0;
