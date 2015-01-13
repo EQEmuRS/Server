@@ -5057,14 +5057,20 @@ XS(XS_Client_UpdateTaskActivity); /* prototype to pass -Wmissing-prototypes */
 XS(XS_Client_UpdateTaskActivity)
 {
 	dXSARGS;
-	if (items <= 4)
+	if (items < 4)
 		Perl_croak(aTHX_ "Usage: Client::UpdateTaskActivity(THIS, TaskID, ActivityID, Count, [ignore_quest_update])");
 	{
+		bool ignore_quest_update = false;
+
 		Client *	THIS;
+
 		int		TaskID = (int)SvIV(ST(1));
 		int		ActivityID = (int)SvIV(ST(2));
 		int		Count = (int)SvUV(ST(3));
-		bool	ignore_quest_update = (bool)SvTRUE(ST(4));
+
+		if (items == 5){
+			ignore_quest_update = (bool)SvTRUE(ST(4));
+		}
 
 		if (sv_derived_from(ST(0), "Client")) {
 			IV tmp = SvIV((SV*)SvRV(ST(0)));

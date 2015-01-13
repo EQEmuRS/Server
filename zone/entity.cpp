@@ -371,7 +371,7 @@ void EntityList::CheckGroupList (const char *fname, const int fline)
 	{
 		if (*it == nullptr)
 		{
-			LogFile->write(EQEMuLog::Error, "nullptr group, %s:%i", fname, fline);
+			LogFile->write(EQEmuLog::Error, "nullptr group, %s:%i", fname, fline);
 		}
 	}
 }
@@ -386,11 +386,8 @@ void EntityList::GroupProcess()
 		return;
 	}
 
-	auto it = group_list.begin();
-	while (it != group_list.end()) {
-		(*it)->Process();
-		++it;
-	}
+	for (auto &group : group_list)
+		group->Process();
 
 #if EQDEBUG >= 5
 	CheckGroupList (__FILE__, __LINE__);
@@ -399,11 +396,8 @@ void EntityList::GroupProcess()
 
 void EntityList::QueueToGroupsForNPCHealthAA(Mob *sender, const EQApplicationPacket *app)
 {
-	auto it = group_list.begin();
-	while (it != group_list.end()) {
-		(*it)->QueueHPPacketsForNPCHealthAA(sender, app);
-		++it;
-	}
+	for (auto &group : group_list)
+		group->QueueHPPacketsForNPCHealthAA(sender, app);
 }
 
 void EntityList::RaidProcess()
@@ -416,11 +410,8 @@ void EntityList::RaidProcess()
 		return;
 	}
 
-	auto it = raid_list.begin();
-	while (it != raid_list.end()) {
-		(*it)->Process();
-		++it;
-	}
+	for (auto &raid : raid_list)
+		raid->Process();
 }
 
 void EntityList::DoorProcess()
@@ -529,12 +520,12 @@ void EntityList::MobProcess()
 				zone->StartShutdownTimer();
 				Group *g = GetGroupByMob(mob);
 				if(g) {
-					LogFile->write(EQEMuLog::Error, "About to delete a client still in a group.");
+					LogFile->write(EQEmuLog::Error, "About to delete a client still in a group.");
 					g->DelMember(mob);
 				}
 				Raid *r = entity_list.GetRaidByClient(mob->CastToClient());
 				if(r) {
-					LogFile->write(EQEMuLog::Error, "About to delete a client still in a raid.");
+					LogFile->write(EQEmuLog::Error, "About to delete a client still in a raid.");
 					r->MemberZoned(mob->CastToClient());
 				}
 				entity_list.RemoveClient(id);
@@ -566,7 +557,7 @@ void EntityList::AddGroup(Group *group)
 
 	uint32 gid = worldserver.NextGroupID();
 	if (gid == 0) {
-		LogFile->write(EQEMuLog::Error,
+		LogFile->write(EQEmuLog::Error,
 				"Unable to get new group ID from world server. group is going to be broken.");
 		return;
 	}
@@ -595,7 +586,7 @@ void EntityList::AddRaid(Raid *raid)
 
 	uint32 gid = worldserver.NextGroupID();
 	if (gid == 0) {
-		LogFile->write(EQEMuLog::Error,
+		LogFile->write(EQEmuLog::Error,
 				"Unable to get new group ID from world server. group is going to be broken.");
 		return;
 	}
@@ -2026,13 +2017,17 @@ void EntityList::RemoveAllNPCs()
 
 void EntityList::RemoveAllMercs()
 {
+	// doesn't clear the data
 	merc_list.clear();
 }
 
 void EntityList::RemoveAllGroups()
 {
-	while (group_list.size())
+	while (group_list.size()) {
+		auto group = group_list.front();
 		group_list.pop_front();
+		delete group;
+	}
 #if EQDEBUG >= 5
 	CheckGroupList (__FILE__, __LINE__);
 #endif
@@ -2040,8 +2035,11 @@ void EntityList::RemoveAllGroups()
 
 void EntityList::RemoveAllRaids()
 {
-	while (raid_list.size())
+	while (raid_list.size()) {
+		auto raid = raid_list.front();
 		raid_list.pop_front();
+		delete raid;
+	}
 }
 
 void EntityList::RemoveAllDoors()
@@ -2244,42 +2242,30 @@ bool EntityList::RemoveCorpse(uint16 delete_id)
 
 bool EntityList::RemoveGroup(uint32 delete_id)
 {
-	std::list<Group *>::iterator iterator;
-
-	iterator = group_list.begin();
-
-	while(iterator != group_list.end())
-	{
-		if((*iterator)->GetID() == delete_id) {
-			group_list.remove (*iterator);
+	auto it = std::find_if(group_list.begin(), group_list.end(),
+			[delete_id](const Group *a) { return a->GetID() == delete_id; });
+	if (it == group_list.end()) {
 #if EQDEBUG >= 5
-	CheckGroupList (__FILE__, __LINE__);
+		CheckGroupList (__FILE__, __LINE__);
 #endif
-			return true;
-		}
-		++iterator;
+		return false;
 	}
-#if EQDEBUG >= 5
-	CheckGroupList (__FILE__, __LINE__);
-#endif
-	return false;
+	auto group = *it;
+	group_list.erase(it);
+	delete group;
+	return true;
 }
 
 bool EntityList::RemoveRaid(uint32 delete_id)
 {
-	std::list<Raid *>::iterator iterator;
-
-	iterator = raid_list.begin();
-
-	while(iterator != raid_list.end())
-	{
-		if((*iterator)->GetID() == delete_id) {
-			raid_list.remove (*iterator);
-			return true;
-		}
-		++iterator;
-	}
-	return false;
+	auto it = std::find_if(raid_list.begin(), raid_list.end(),
+			[delete_id](const Raid *a) { return a->GetID() == delete_id; });
+	if (it == raid_list.end())
+		return false;
+	auto raid = *it;
+	raid_list.erase(it);
+	delete raid;
+	return true;
 }
 
 void EntityList::Clear()
@@ -2523,7 +2509,7 @@ char *EntityList::MakeNameUnique(char *name)
 			return name;
 		}
 	}
-	LogFile->write(EQEMuLog::Error, "Fatal error in EntityList::MakeNameUnique: Unable to find unique name for '%s'", name);
+	LogFile->write(EQEmuLog::Error, "Fatal error in EntityList::MakeNameUnique: Unable to find unique name for '%s'", name);
 	char tmp[64] = "!";
 	strn0cpy(&tmp[1], name, sizeof(tmp) - 1);
 	strcpy(name, tmp);
@@ -3136,21 +3122,18 @@ void EntityList::AddProximity(NPC *proximity_for)
 
 	proximity_list.push_back(proximity_for);
 
-	proximity_for->proximity = new NPCProximity;
+	proximity_for->proximity = new NPCProximity; // deleted in NPC::~NPC
 }
 
 bool EntityList::RemoveProximity(uint16 delete_npc_id)
 {
-	auto iter = proximity_list.begin();
+	auto it = std::find_if(proximity_list.begin(), proximity_list.end(),
+			[delete_npc_id](const NPC *a) { return a->GetID() == delete_npc_id; });
+	if (it == proximity_list.end())
+		return false;
 
-	while (iter != proximity_list.end()) {
-		if ((*iter)->GetID() == delete_npc_id) {
-			proximity_list.erase(iter);
-			return true;
-		}
-		++iter;
-	}
-	return false;
+	proximity_list.erase(it);
+	return true;
 }
 
 void EntityList::RemoveAllLocalities()
@@ -3353,14 +3336,12 @@ void EntityList::AddArea(int id, int type, float min_x, float max_x, float min_y
 
 void EntityList::RemoveArea(int id)
 {
-	auto iter = area_list.begin();
-	while(iter != area_list.end()) {
-		if((*iter).id == id) {
-			area_list.erase(iter);
-			return;
-		}
-		++iter;
-	}
+	auto it = std::find_if(area_list.begin(), area_list.end(),
+			[id](const Area &a) { return a.id == id; });
+	if (it == area_list.end())
+		return;
+
+	area_list.erase(it);
 }
 
 void EntityList::ClearAreas()
@@ -4523,7 +4504,6 @@ void EntityList::AddLootToNPCS(uint32 item_id, uint32 count)
 void EntityList::CameraEffect(uint32 duration, uint32 intensity)
 {
 	EQApplicationPacket* outapp = new EQApplicationPacket(OP_CameraEffect, sizeof(Camera_Struct));
-	memset(outapp->pBuffer, 0, sizeof(outapp->pBuffer));
 	Camera_Struct* cs = (Camera_Struct*) outapp->pBuffer;
 	cs->duration = duration;	// Duration in milliseconds
 	cs->intensity = ((intensity * 6710886) + 1023410176);	// Intensity ranges from 1023410176 to 1090519040, so simplify it from 0 to 10.
@@ -4688,3 +4668,10 @@ Mob *EntityList::GetTargetForVirus(Mob *spreader, int range)
 	return TargetsInRange[zone->random.Int(0, TargetsInRange.size() - 1)];
 }
 
+void EntityList::StopMobAI()
+{
+	for (auto &mob : mob_list) {
+		mob.second->AI_Stop();
+		mob.second->AI_ShutDown();
+	}
+}

@@ -21,17 +21,23 @@ namespace RoF2
 	static OpcodeManager *opcodes = nullptr;
 	static Strategy struct_strategy;
 
-	char* SerializeItem(const ItemInst *inst, int16 slot_id, uint32 *length, uint8 depth);
+	char* SerializeItem(const ItemInst *inst, int16 slot_id, uint32 *length, uint8 depth, ItemPacketType packet_type);
 
 	// server to client inventory location converters
-	static inline structs::ItemSlotStruct ServerToRoF2Slot(uint32 ServerSlot);
+	static inline structs::ItemSlotStruct ServerToRoF2Slot(uint32 ServerSlot, ItemPacketType PacketType = ItemPacketInvalid);
 	static inline structs::MainInvItemSlotStruct ServerToRoF2MainInvSlot(uint32 ServerSlot);
 	static inline uint32 ServerToRoF2CorpseSlot(uint32 ServerCorpse);
 
 	// client to server inventory location converters
-	static inline uint32 RoF2ToServerSlot(structs::ItemSlotStruct RoF2Slot);
+	static inline uint32 RoF2ToServerSlot(structs::ItemSlotStruct RoF2Slot, ItemPacketType PacketType = ItemPacketInvalid);
 	static inline uint32 RoF2ToServerMainInvSlot(structs::MainInvItemSlotStruct RoF2Slot);
 	static inline uint32 RoF2ToServerCorpseSlot(uint32 RoF2Corpse);
+
+	// server to client text link converter
+	static inline void ServerToRoF2TextLink(std::string& rof2TextLink, const std::string& serverTextLink);
+
+	// client to server text link converter
+	static inline void RoF2ToServerTextLink(std::string& serverTextLink, const std::string& rof2TextLink);
 
 	void Register(EQStreamIdentifier &into)
 	{
@@ -554,7 +560,13 @@ namespace RoF2
 
 		unsigned char *__emu_buffer = in->pBuffer;
 
-		in->size = strlen(emu->sender) + 1 + strlen(emu->targetname) + 1 + strlen(emu->message) + 1 + 36;
+		std::string old_message = emu->message;
+		std::string new_message;
+		ServerToRoF2TextLink(new_message, old_message);
+
+		//in->size = strlen(emu->sender) + 1 + strlen(emu->targetname) + 1 + strlen(emu->message) + 1 + 36;
+		in->size = strlen(emu->sender) + strlen(emu->targetname) + new_message.length() + 39;
+		
 		in->pBuffer = new unsigned char[in->size];
 
 		char *OutBuffer = (char *)in->pBuffer;
@@ -567,7 +579,7 @@ namespace RoF2
 		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, 0);	// Unknown
 		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, 0);	// Unknown
 		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->skill_in_language);
-		VARSTRUCT_ENCODE_STRING(OutBuffer, emu->message);
+		VARSTRUCT_ENCODE_STRING(OutBuffer, new_message.c_str());
 
 		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, 0);	// Unknown
 		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, 0);	// Unknown
@@ -622,7 +634,7 @@ namespace RoF2
 
 			uint32 Length = 0;
 
-			char* Serialized = SerializeItem((const ItemInst*)eq->inst, eq->slot_id, &Length, 0);
+			char* Serialized = SerializeItem((const ItemInst*)eq->inst, eq->slot_id, &Length, 0, ItemPacketCharInventory);
 
 			if (Serialized) {
 
@@ -884,6 +896,34 @@ namespace RoF2
 		FINISH_ENCODE();
 	}
 
+	ENCODE(OP_Emote)
+	{
+		EQApplicationPacket *in = *p;
+		*p = nullptr;
+
+		Emote_Struct *emu = (Emote_Struct *)in->pBuffer;
+
+		unsigned char *__emu_buffer = in->pBuffer;
+
+		std::string old_message = emu->message;
+		std::string new_message;
+		ServerToRoF2TextLink(new_message, old_message);
+
+		//if (new_message.length() > 512) // length restricted in packet building function due vari-length name size (no nullterm)
+		//	new_message = new_message.substr(0, 512);
+
+		in->size = new_message.length() + 5;
+		in->pBuffer = new unsigned char[in->size];
+
+		char *OutBuffer = (char *)in->pBuffer;
+
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->type);
+		VARSTRUCT_ENCODE_STRING(OutBuffer, new_message.c_str());
+
+		delete[] __emu_buffer;
+		dest->FastQueuePacket(&in, ack_req);
+	}
+
 	ENCODE(OP_ExpansionInfo)
 	{
 		ENCODE_LENGTH_EXACT(ExpansionInfo_Struct);
@@ -892,6 +932,55 @@ namespace RoF2
 		OUT(Expansions);
 
 		FINISH_ENCODE();
+	}
+
+	ENCODE(OP_FormattedMessage)
+	{
+		EQApplicationPacket *in = *p;
+		*p = nullptr;
+
+		FormattedMessage_Struct *emu = (FormattedMessage_Struct *)in->pBuffer;
+
+		unsigned char *__emu_buffer = in->pBuffer;
+
+		char *old_message_ptr = (char *)in->pBuffer;
+		old_message_ptr += sizeof(FormattedMessage_Struct);
+
+		std::string old_message_array[9];
+
+		for (int i = 0; i < 9; ++i) {
+			if (*old_message_ptr == 0) { break; }
+			old_message_array[i] = old_message_ptr;
+			old_message_ptr += old_message_array[i].length() + 1;
+		}
+
+		uint32 new_message_size = 0;
+		std::string new_message_array[9];
+
+		for (int i = 0; i < 9; ++i) {
+			if (old_message_array[i].length() == 0) { break; }
+			ServerToRoF2TextLink(new_message_array[i], old_message_array[i]);
+			new_message_size += new_message_array[i].length() + 1;
+		}
+
+		in->size = sizeof(FormattedMessage_Struct) + new_message_size + 1;
+		in->pBuffer = new unsigned char[in->size];
+
+		char *OutBuffer = (char *)in->pBuffer;
+
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->unknown0);
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->string_id);
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->type);
+
+		for (int i = 0; i < 9; ++i) {
+			if (new_message_array[i].length() == 0) { break; }
+			VARSTRUCT_ENCODE_STRING(OutBuffer, new_message_array[i].c_str());
+		}
+
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, 0);
+
+		delete[] __emu_buffer;
+		dest->FastQueuePacket(&in, ack_req);
 	}
 
 	ENCODE(OP_GMLastName)
@@ -1436,7 +1525,7 @@ namespace RoF2
 		InternalSerializedItem_Struct *int_struct = (InternalSerializedItem_Struct *)(old_item_pkt->SerializedItem);
 
 		uint32 length;
-		char *serialized = SerializeItem((ItemInst *)int_struct->inst, int_struct->slot_id, &length, 0);
+		char *serialized = SerializeItem((ItemInst *)int_struct->inst, int_struct->slot_id, &length, 0, old_item_pkt->PacketType);
 
 		if (!serialized) {
 			_log(NET__STRUCTS, "Serialization failed on item slot %d.", int_struct->slot_id);
@@ -2660,7 +2749,7 @@ namespace RoF2
 		strn0cpy(general->player_name, raid_create->leader_name, 64);
 
 		dest->FastQueuePacket(&outapp_create);
-		delete[] __emu_buffer;
+		safe_delete(inapp);
 	}
 
 	ENCODE(OP_RaidUpdate)
@@ -2727,7 +2816,7 @@ namespace RoF2
 			dest->FastQueuePacket(&outapp);
 		}
 
-		delete[] __emu_buffer;
+		safe_delete(inapp);
 	}
 
 	ENCODE(OP_ReadBook)
@@ -3162,6 +3251,54 @@ namespace RoF2
 		FINISH_ENCODE();
 	}
 
+	ENCODE(OP_SpecialMesg)
+	{
+		EQApplicationPacket *in = *p;
+		*p = nullptr;
+
+		SpecialMesg_Struct *emu = (SpecialMesg_Struct *)in->pBuffer;
+
+		unsigned char *__emu_buffer = in->pBuffer;
+
+		std::string old_message = &emu->message[strlen(emu->sayer)];
+		std::string new_message;
+
+		ServerToRoF2TextLink(new_message, old_message);
+
+		//in->size = 3 + 4 + 4 + strlen(emu->sayer) + 1 + 12 + new_message.length() + 1;
+		in->size = strlen(emu->sayer) + new_message.length() + 25;
+		in->pBuffer = new unsigned char[in->size];
+
+		char *OutBuffer = (char *)in->pBuffer;
+
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->header[0]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->header[1]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->header[2]);
+
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->msg_type);
+		VARSTRUCT_ENCODE_TYPE(uint32, OutBuffer, emu->target_spawn_id);
+
+		VARSTRUCT_ENCODE_STRING(OutBuffer, emu->sayer);
+
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[0]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[1]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[2]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[3]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[4]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[5]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[6]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[7]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[8]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[9]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[10]);
+		VARSTRUCT_ENCODE_TYPE(uint8, OutBuffer, emu->unknown12[11]);
+
+		VARSTRUCT_ENCODE_STRING(OutBuffer, new_message.c_str());
+
+		delete[] __emu_buffer;
+		dest->FastQueuePacket(&in, ack_req);
+	}
+
 	ENCODE(OP_Stun)
 	{
 		ENCODE_LENGTH_EXACT(Stun_Struct);
@@ -3178,6 +3315,51 @@ namespace RoF2
 
 	ENCODE(OP_TaskDescription)
 	{
+		EQApplicationPacket *in = *p;
+		*p = nullptr;
+
+		unsigned char *__emu_buffer = in->pBuffer;
+
+		char *InBuffer = (char *)in->pBuffer;
+		char *block_start = InBuffer;
+
+		InBuffer += sizeof(TaskDescriptionHeader_Struct);
+		uint32 title_size = strlen(InBuffer) + 1;
+		InBuffer += title_size;
+
+		TaskDescriptionData1_Struct *emu_tdd1 = (TaskDescriptionData1_Struct *)InBuffer;
+		emu_tdd1->StartTime = (time(nullptr) - emu_tdd1->StartTime); // RoF2 has elapsed time here rather than start time
+
+		InBuffer += sizeof(TaskDescriptionData1_Struct);
+		uint32 description_size = strlen(InBuffer) + 1;
+		InBuffer += description_size;
+		InBuffer += sizeof(TaskDescriptionData2_Struct);
+
+		std::string old_message = InBuffer; // start 'Reward' as string
+		std::string new_message;
+		ServerToRoF2TextLink(new_message, old_message);
+
+		in->size = sizeof(TaskDescriptionHeader_Struct) + sizeof(TaskDescriptionData1_Struct)+
+			sizeof(TaskDescriptionData2_Struct) + sizeof(TaskDescriptionTrailer_Struct)+
+			title_size + description_size + new_message.length() + 1;
+
+		in->pBuffer = new unsigned char[in->size];
+
+		char *OutBuffer = (char *)in->pBuffer;
+
+		memcpy(OutBuffer, block_start, (InBuffer - block_start));
+		OutBuffer += (InBuffer - block_start);
+
+		VARSTRUCT_ENCODE_STRING(OutBuffer, new_message.c_str());
+
+		InBuffer += strlen(InBuffer) + 1;
+
+		memcpy(OutBuffer, InBuffer, sizeof(TaskDescriptionTrailer_Struct));
+
+		delete[] __emu_buffer;
+		dest->FastQueuePacket(&in, ack_req);
+
+#if 0 // original code
 		EQApplicationPacket *in = *p;
 		*p = nullptr;
 
@@ -3204,6 +3386,7 @@ namespace RoF2
 
 		delete in;
 		dest->FastQueuePacket(&outapp, ack_req);
+#endif
 	}
 
 	ENCODE(OP_TaskHistoryReply)
@@ -4113,7 +4296,13 @@ namespace RoF2
 
 		uint32 Skill = VARSTRUCT_DECODE_TYPE(uint32, InBuffer);
 
-		__packet->size = sizeof(ChannelMessage_Struct)+strlen(InBuffer) + 1;
+		std::string old_message = InBuffer;
+		std::string new_message;
+		RoF2ToServerTextLink(new_message, old_message);
+
+		//__packet->size = sizeof(ChannelMessage_Struct)+strlen(InBuffer) + 1;
+		__packet->size = sizeof(ChannelMessage_Struct) + new_message.length() + 1;
+
 		__packet->pBuffer = new unsigned char[__packet->size];
 		ChannelMessage_Struct *emu = (ChannelMessage_Struct *)__packet->pBuffer;
 
@@ -4122,7 +4311,7 @@ namespace RoF2
 		emu->language = Language;
 		emu->chan_num = Channel;
 		emu->skill_in_language = Skill;
-		strcpy(emu->message, InBuffer);
+		strcpy(emu->message, new_message.c_str());
 
 		delete[] __eq_buffer;
 	}
@@ -4235,6 +4424,27 @@ namespace RoF2
 		IN(number_in_stack);
 
 		FINISH_DIRECT_DECODE();
+	}
+
+	DECODE(OP_Emote)
+	{
+		unsigned char *__eq_buffer = __packet->pBuffer;
+
+		std::string old_message = (char *)&__eq_buffer[4]; // unknown01 offset
+		std::string new_message;
+		RoF2ToServerTextLink(new_message, old_message);
+
+		__packet->size = sizeof(Emote_Struct);
+		__packet->pBuffer = new unsigned char[__packet->size];
+
+		char *InBuffer = (char *)__packet->pBuffer;
+
+		memcpy(InBuffer, __eq_buffer, 4);
+		InBuffer += 4;
+		strcpy(InBuffer, new_message.substr(0, 1023).c_str());
+		InBuffer[1023] = '\0';
+
+		delete[] __eq_buffer;
 	}
 
 	DECODE(OP_EnvDamage)
@@ -4527,47 +4737,8 @@ namespace RoF2
 		DECODE_LENGTH_EXACT(structs::PetCommand_Struct);
 		SETUP_DIRECT_DECODE(PetCommand_Struct, structs::PetCommand_Struct);
 
-		switch (eq->command)
-		{
-		case 0x00:
-			emu->command = 0x04;	// Health
-			break;
-		case 0x01:
-			emu->command = 0x10;	// Leader
-			break;
-		case 0x02:
-			emu->command = 0x07;	// Attack
-			break;
-		case 0x04:
-			emu->command = 0x08;	// Follow
-			break;
-		case 0x05:
-			emu->command = 0x05;	// Guard
-			break;
-		case 0x06:
-			emu->command = 0x09;	// Sit. Needs work. This appears to be a toggle between Sit/Stand now.
-			break;
-		case 0x0c:
-			emu->command = 0x0b;	// Taunt
-			break;
-		case 0x0f:
-			emu->command = 0x0c;	// Hold
-			break;
-		case 0x10:
-			emu->command = 0x1b;	// Hold on
-			break;
-		case 0x11:
-			emu->command = 0x1c;	// Hold off
-			break;
-		case 0x1c:
-			emu->command = 0x01;	// Back
-			break;
-		case 0x1d:
-			emu->command = 0x02;	// Leave/Go Away
-			break;
-		default:
-			emu->command = eq->command;
-		}
+		IN(command);
+		emu->unknown = eq->unknown04;
 
 		FINISH_DIRECT_DECODE();
 	}
@@ -4867,7 +5038,7 @@ namespace RoF2
 		return NextItemInstSerialNumber;
 	}
 
-	char* SerializeItem(const ItemInst *inst, int16 slot_id_in, uint32 *length, uint8 depth)
+	char* SerializeItem(const ItemInst *inst, int16 slot_id_in, uint32 *length, uint8 depth, ItemPacketType packet_type)
 	{
 		int ornamentationAugtype = RuleI(Character, OrnamentationAugmentType);
 		uint8 null_term = 0;
@@ -4891,7 +5062,7 @@ namespace RoF2
 		hdr.stacksize = stackable ? charges : 1;
 		hdr.unknown004 = 0;
 
-		structs::ItemSlotStruct slot_id = ServerToRoF2Slot(slot_id_in);
+		structs::ItemSlotStruct slot_id = ServerToRoF2Slot(slot_id_in, packet_type);
 
 		hdr.slot_type = (merchant_slot == 0) ? slot_id.SlotType : 9; // 9 is merchant 20 is reclaim items?
 		hdr.main_slot = (merchant_slot == 0) ? slot_id.MainSlot : merchant_slot;
@@ -5396,7 +5567,7 @@ namespace RoF2
 				SubSlotNumber = Inventory::CalcSlotID(slot_id_in, x);
 				*/
 
-				SubSerializations[x] = SerializeItem(subitem, SubSlotNumber, &SubLengths[x], depth + 1);
+				SubSerializations[x] = SerializeItem(subitem, SubSlotNumber, &SubLengths[x], depth + 1, packet_type);
 			}
 		}
 
@@ -5422,7 +5593,7 @@ namespace RoF2
 		return item_serial;
 	}
 
-	static inline structs::ItemSlotStruct ServerToRoF2Slot(uint32 ServerSlot)
+	static inline structs::ItemSlotStruct ServerToRoF2Slot(uint32 ServerSlot, ItemPacketType PacketType)
 	{
 		structs::ItemSlotStruct RoF2Slot;
 		RoF2Slot.SlotType = INVALID_INDEX;
@@ -5435,13 +5606,21 @@ namespace RoF2
 		uint32 TempSlot = 0;
 
 		if (ServerSlot < 56 || ServerSlot == MainPowerSource) { // Main Inventory and Cursor
-			RoF2Slot.SlotType = maps::MapPossessions;
-			RoF2Slot.MainSlot = ServerSlot;
-
+			if (PacketType == ItemPacketLoot)
+			{
+				RoF2Slot.SlotType = maps::MapCorpse;
+				RoF2Slot.MainSlot = ServerSlot - EmuConstants::CORPSE_BEGIN;
+			}
+			else
+			{
+				RoF2Slot.SlotType = maps::MapPossessions;
+				RoF2Slot.MainSlot = ServerSlot;
+			}
+			
 			if (ServerSlot == MainPowerSource)
 				RoF2Slot.MainSlot = slots::MainPowerSource;
 
-			else if (ServerSlot >= MainCursor) // Cursor and Extended Corpse Inventory
+			else if (ServerSlot >= MainCursor && PacketType != ItemPacketLoot) // Cursor and Extended Corpse Inventory
 				RoF2Slot.MainSlot += 3;
 
 			else if (ServerSlot >= MainAmmo) // (> 20)
@@ -5568,11 +5747,10 @@ namespace RoF2
 
 	static inline uint32 ServerToRoF2CorpseSlot(uint32 ServerCorpse)
 	{
-		//uint32 RoF2Corpse;
-		return (ServerCorpse + 1);
+		return (ServerCorpse - EmuConstants::CORPSE_BEGIN + 1);
 	}
 
-	static inline uint32 RoF2ToServerSlot(structs::ItemSlotStruct RoF2Slot)
+	static inline uint32 RoF2ToServerSlot(structs::ItemSlotStruct RoF2Slot, ItemPacketType PacketType)
 	{
 		uint32 ServerSlot = INVALID_INDEX;
 		uint32 TempSlot = 0;
@@ -5667,6 +5845,10 @@ namespace RoF2
 			ServerSlot = INVALID_INDEX;
 		}
 
+		else if (RoF2Slot.SlotType == maps::MapCorpse) {
+			ServerSlot = RoF2Slot.MainSlot + EmuConstants::CORPSE_BEGIN;
+		}
+
 		_log(NET__ERROR, "Convert RoF2 Slots: Type %i, Unk2 %i, Main %i, Sub %i, Aug %i, Unk1 %i to Server Slot %i", RoF2Slot.SlotType, RoF2Slot.Unknown02, RoF2Slot.MainSlot, RoF2Slot.SubSlot, RoF2Slot.AugSlot, RoF2Slot.Unknown01, ServerSlot);
 
 		return ServerSlot;
@@ -5709,8 +5891,71 @@ namespace RoF2
 
 	static inline uint32 RoF2ToServerCorpseSlot(uint32 RoF2Corpse)
 	{
-		//uint32 ServerCorpse;
-		return (RoF2Corpse - 1);
+		return (RoF2Corpse + EmuConstants::CORPSE_BEGIN - 1); 
+	}
+
+	static inline void ServerToRoF2TextLink(std::string& rof2TextLink, const std::string& serverTextLink)
+	{
+		if ((consts::TEXT_LINK_BODY_LENGTH == EmuConstants::TEXT_LINK_BODY_LENGTH) || (serverTextLink.find('\x12') == std::string::npos)) {
+			rof2TextLink = serverTextLink;
+			return;
+		}
+
+		auto segments = SplitString(serverTextLink, '\x12');
+
+		for (size_t segment_iter = 0; segment_iter < segments.size(); ++segment_iter) {
+			if (segment_iter & 1) {
+				if (segments[segment_iter].length() <= EmuConstants::TEXT_LINK_BODY_LENGTH) {
+					rof2TextLink.append(segments[segment_iter]);
+					// TODO: log size mismatch error
+					continue;
+				}
+
+				// Idx:  0 1     6     11    16    21    26    31    36 37   41 43    48       (Source)
+				// RoF2: X XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX X  XXXX XX XXXXX XXXXXXXX (56)
+				// RoF2: X XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX X  XXXX XX XXXXX XXXXXXXX (56)
+				// Diff:
+
+				rof2TextLink.push_back('\x12');
+				rof2TextLink.append(segments[segment_iter]);
+				rof2TextLink.push_back('\x12');
+			}
+			else {
+				rof2TextLink.append(segments[segment_iter]);
+			}
+		}
+	}
+
+	static inline void RoF2ToServerTextLink(std::string& serverTextLink, const std::string& rof2TextLink)
+	{
+		if ((EmuConstants::TEXT_LINK_BODY_LENGTH == consts::TEXT_LINK_BODY_LENGTH) || (rof2TextLink.find('\x12') == std::string::npos)) {
+			serverTextLink = rof2TextLink;
+			return;
+		}
+
+		auto segments = SplitString(rof2TextLink, '\x12');
+
+		for (size_t segment_iter = 0; segment_iter < segments.size(); ++segment_iter) {
+			if (segment_iter & 1) {
+				if (segments[segment_iter].length() <= consts::TEXT_LINK_BODY_LENGTH) {
+					serverTextLink.append(segments[segment_iter]);
+					// TODO: log size mismatch error
+					continue;
+				}
+
+				// Idx:  0 1     6     11    16    21    26    31    36 37   41 43    48       (Source)
+				// RoF2: X XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX X  XXXX XX XXXXX XXXXXXXX (56)
+				// RoF2: X XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX XXXXX X  XXXX XX XXXXX XXXXXXXX (56)
+				// Diff:
+
+				serverTextLink.push_back('\x12');
+				serverTextLink.append(segments[segment_iter]);
+				serverTextLink.push_back('\x12');
+			}
+			else {
+				serverTextLink.append(segments[segment_iter]);
+			}
+		}
 	}
 }
 // end namespace RoF2
