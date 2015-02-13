@@ -46,32 +46,85 @@ static const char* ClientVersionName(ClientVersion version)
 	switch (version)
 	{
 	case ClientVersion::Unknown:
-		return "ClientVersion::Unknown";
+		return "Unknown";
 	case ClientVersion::Client62:
-		return "ClientVersion::Client62";
+		return "Client62";
 	case ClientVersion::Titanium:
-		return "ClientVersion::Titanium";
+		return "Titanium";
 	case ClientVersion::SoF:
-		return "ClientVersion::SoF";
+		return "SoF";
 	case ClientVersion::SoD:
-		return "ClientVersion::SoD";
+		return "SoD";
 	case ClientVersion::UF:
-		return "ClientVersion::UF";
+		return "UF";
 	case ClientVersion::RoF:
-		return "ClientVersion::RoF";
+		return "RoF";
 	case ClientVersion::RoF2:
-		return "ClientVersion::RoF2";
+		return "RoF2";
 	case ClientVersion::MobNPC:
-		return "ClientVersion::MobNPC";
+		return "MobNPC";
 	case ClientVersion::MobMerc:
-		return "ClientVersion::MobMerc";
+		return "MobMerc";
 	case ClientVersion::MobBot:
-		return "ClientVersion::MobBot";
+		return "MobBot";
 	case ClientVersion::MobPet:
-		return "ClientVersion::MobPet";
+		return "MobPet";
 	default:
 		return "<ERROR> Invalid ClientVersion";
 	};
+}
+
+static uint32 ClientBitFromVersion(ClientVersion clientVersion)
+{
+	switch (clientVersion) {
+	case ClientVersion::Unknown:
+	case ClientVersion::Client62:
+		return 0;
+	case ClientVersion::Titanium:
+	case ClientVersion::SoF:
+	case ClientVersion::SoD:
+	case ClientVersion::UF:
+	case ClientVersion::RoF:
+	case ClientVersion::RoF2:
+	case ClientVersion::MobNPC:
+	case ClientVersion::MobMerc:
+	case ClientVersion::MobBot:
+	case ClientVersion::MobPet:
+		return ((uint32)1 << (static_cast<unsigned int>(clientVersion) - 1));
+	default:
+		return 0;
+	}
+}
+
+static ClientVersion ClientVersionFromBit(uint32 clientVersionBit)
+{
+	switch (clientVersionBit) {
+	case (uint32)static_cast<unsigned int>(ClientVersion::Unknown):
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::Client62) - 1)):
+		return ClientVersion::Unknown;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::Titanium) - 1)):
+		return ClientVersion::Titanium;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::SoF) - 1)):
+		return ClientVersion::SoF;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::SoD) - 1)):
+		return ClientVersion::SoD;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::UF) - 1)):
+		return ClientVersion::UF;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::RoF) - 1)):
+		return ClientVersion::RoF;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::RoF2) - 1)):
+		return ClientVersion::RoF2;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::MobNPC) - 1)):
+		return ClientVersion::MobNPC;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::MobMerc) - 1)):
+		return ClientVersion::MobMerc;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::MobBot) - 1)):
+		return ClientVersion::MobBot;
+	case ((uint32)1 << (static_cast<unsigned int>(ClientVersion::MobPet) - 1)):
+		return ClientVersion::MobPet;
+	default:
+		return ClientVersion::Unknown;
+	}
 }
 
 #endif /* CLIENTVERSIONS_H */

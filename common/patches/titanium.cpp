@@ -922,24 +922,46 @@ namespace Titanium
 		OUT(endurance);
 		OUT(aapoints_spent);
 		OUT(aapoints);
+
 		//	OUT(unknown06160[4]);
-		for (r = 0; r < structs::MAX_PLAYER_BANDOLIER; r++) {
-			OUT_str(bandoliers[r].name);
-			uint32 k;
-			for (k = 0; k < structs::MAX_PLAYER_BANDOLIER_ITEMS; k++) {
-				OUT(bandoliers[r].items[k].item_id);
-				OUT(bandoliers[r].items[k].icon);
-				OUT_str(bandoliers[r].items[k].item_name);
+
+		// Copy bandoliers where server and client indexes converge
+		for (r = 0; r < EmuConstants::BANDOLIERS_SIZE && r < consts::BANDOLIERS_SIZE; ++r) {
+			OUT_str(bandoliers[r].Name);
+			for (uint32 k = 0; k < consts::BANDOLIER_ITEM_COUNT; ++k) { // Will need adjusting if 'server != client' is ever true
+				OUT(bandoliers[r].Items[k].ID);
+				OUT(bandoliers[r].Items[k].Icon);
+				OUT_str(bandoliers[r].Items[k].Name);
 			}
 		}
-		//	OUT(unknown07444[5120]);
-		for (r = 0; r < structs::MAX_PLAYER_BANDOLIER_ITEMS; r++) {
-			OUT(potionbelt.items[r].item_id);
-			OUT(potionbelt.items[r].icon);
-			OUT_str(potionbelt.items[r].item_name);
+		// Nullify bandoliers where server and client indexes diverge, with a client bias
+		for (r = EmuConstants::BANDOLIERS_SIZE; r < consts::BANDOLIERS_SIZE; ++r) {
+			eq->bandoliers[r].Name[0] = '\0';
+			for (uint32 k = 0; k < consts::BANDOLIER_ITEM_COUNT; ++k) { // Will need adjusting if 'server != client' is ever true
+				eq->bandoliers[r].Items[k].ID = 0;
+				eq->bandoliers[r].Items[k].Icon = 0;
+				eq->bandoliers[r].Items[k].Name[0] = '\0';
+			}
 		}
+
+		//	OUT(unknown07444[5120]);
+
+		// Copy potion belt where server and client indexes converge
+		for (r = 0; r < EmuConstants::POTION_BELT_SIZE && r < consts::POTION_BELT_SIZE; ++r) {
+			OUT(potionbelt.Items[r].ID);
+			OUT(potionbelt.Items[r].Icon);
+			OUT_str(potionbelt.Items[r].Name);
+		}
+		// Nullify potion belt where server and client indexes diverge, with a client bias
+		for (r = EmuConstants::POTION_BELT_SIZE; r < consts::POTION_BELT_SIZE; ++r) {
+			eq->potionbelt.Items[r].ID = 0;
+			eq->potionbelt.Items[r].Icon = 0;
+			eq->potionbelt.Items[r].Name[0] = '\0';
+		}
+
 		//	OUT(unknown12852[8]);
 		//	OUT(unknown12864[76]);
+
 		OUT_str(name);
 		OUT_str(last_name);
 		OUT(guild_id);
@@ -1136,8 +1158,7 @@ namespace Titanium
 		ENCODE_LENGTH_EXACT(CharacterSelect_Struct);
 		SETUP_DIRECT_ENCODE(CharacterSelect_Struct, structs::CharacterSelect_Struct);
 
-		int r;
-		for (r = 0; r < 10; r++) {
+		for (int r = 0; r < EmuConstants::CHARACTER_CREATION_LIMIT && r < consts::CHARACTER_CREATION_LIMIT; r++) { // Fill convergence
 			OUT(zone[r]);
 			OUT(eyecolor1[r]);
 			OUT(eyecolor2[r]);
@@ -1155,7 +1176,7 @@ namespace Titanium
 			OUT(face[r]);
 			OUT(beard[r]);
 			int k;
-			for (k = 0; k < 9; k++) {
+			for (k = 0; k < _MaterialCount; k++) {
 				eq->equip[r][k] = emu->equip[r][k].material;
 				eq->cs_colors[r][k].color = emu->equip[r][k].color.color;
 			}
@@ -1166,6 +1187,58 @@ namespace Titanium
 			OUT(beardcolor[r]);
 			eq->unknown820[r] = 0xFF;
 			eq->unknown902[r] = 0xFF;
+		}
+		for (int r = EmuConstants::CHARACTER_CREATION_LIMIT; r < consts::CHARACTER_CREATION_LIMIT; r++) { // Fill client-biased divergence
+			eq->zone[r] = 0;
+			eq->eyecolor1[r] = 0;
+			eq->eyecolor2[r] = 0;
+			eq->hairstyle[r] = 0;
+			eq->primary[r] = 0;
+			eq->race[r] = 0;
+			eq->class_[r] = 0;
+			strcpy(eq->name[r], "Unavailable");
+			eq->gender[r] = 0;
+			eq->level[r] = 0;
+			eq->secondary[r] = 0;
+			eq->face[r] = 0;
+			eq->beard[r] = 0;
+			for (int k = 0; k < _MaterialCount; k++) {
+				eq->equip[r][k] = 0;
+				eq->cs_colors[r][k].color = 0;
+			}
+			eq->haircolor[r] = 0;
+			eq->gohome[r] = 0;
+			eq->tutorial[r] = 0;
+			eq->deity[r] = 0;
+			eq->beardcolor[r] = 0;
+			eq->unknown820[r] = 0;
+			eq->unknown902[r] = 0;
+		}
+		for (int r = consts::CHARACTER_CREATION_LIMIT; r < 10; r++) { // Fill the 2 extra slots in the struct's arrays
+			eq->zone[r] = 0;
+			eq->eyecolor1[r] = 0;
+			eq->eyecolor2[r] = 0;
+			eq->hairstyle[r] = 0;
+			eq->primary[r] = 0;
+			eq->race[r] = 0;
+			eq->class_[r] = 0;
+			strcpy(eq->name[r], "<none>");
+			eq->gender[r] = 0;
+			eq->level[r] = 0;
+			eq->secondary[r] = 0;
+			eq->face[r] = 0;
+			eq->beard[r] = 0;
+			for (int k = 0; k < _MaterialCount; k++) {
+				eq->equip[r][k] = 0;
+				eq->cs_colors[r][k].color = 0;
+			}
+			eq->haircolor[r] = 0;
+			eq->gohome[r] = 0;
+			eq->tutorial[r] = 0;
+			eq->deity[r] = 0;
+			eq->beardcolor[r] = 0;
+			eq->unknown820[r] = 0;
+			eq->unknown902[r] = 0;
 		}
 
 		FINISH_ENCODE();

@@ -1264,26 +1264,46 @@ namespace SoF
 		OUT(endurance);
 		OUT(aapoints_spent);
 		OUT(aapoints);
+
 		//	OUT(unknown06160[4]);
-		//NOTE: new client supports 20 bandoliers, our internal rep
-		//only supports 4..
-		for (r = 0; r < 4; r++) {
-			OUT_str(bandoliers[r].name);
-			uint32 k;
-			for (k = 0; k < structs::MAX_PLAYER_BANDOLIER_ITEMS; k++) {
-				OUT(bandoliers[r].items[k].item_id);
-				OUT(bandoliers[r].items[k].icon);
-				OUT_str(bandoliers[r].items[k].item_name);
+
+		// Copy bandoliers where server and client indexes converge
+		for (r = 0; r < EmuConstants::BANDOLIERS_SIZE && r < consts::BANDOLIERS_SIZE; ++r) {
+			OUT_str(bandoliers[r].Name);
+			for (uint32 k = 0; k < consts::BANDOLIER_ITEM_COUNT; ++k) { // Will need adjusting if 'server != client' is ever true
+				OUT(bandoliers[r].Items[k].ID);
+				OUT(bandoliers[r].Items[k].Icon);
+				OUT_str(bandoliers[r].Items[k].Name);
 			}
 		}
-		//	OUT(unknown07444[5120]);
-		for (r = 0; r < structs::MAX_POTIONS_IN_BELT; r++) {
-			OUT(potionbelt.items[r].item_id);
-			OUT(potionbelt.items[r].icon);
-			OUT_str(potionbelt.items[r].item_name);
+		// Nullify bandoliers where server and client indexes diverge, with a client bias
+		for (r = EmuConstants::BANDOLIERS_SIZE; r < consts::BANDOLIERS_SIZE; ++r) {
+			eq->bandoliers[r].Name[0] = '\0';
+			for (uint32 k = 0; k < consts::BANDOLIER_ITEM_COUNT; ++k) { // Will need adjusting if 'server != client' is ever true
+				eq->bandoliers[r].Items[k].ID = 0;
+				eq->bandoliers[r].Items[k].Icon = 0;
+				eq->bandoliers[r].Items[k].Name[0] = '\0';
+			}
 		}
+
+		//	OUT(unknown07444[5120]);
+
+		// Copy potion belt where server and client indexes converge
+		for (r = 0; r < EmuConstants::POTION_BELT_SIZE && r < consts::POTION_BELT_SIZE; ++r) {
+			OUT(potionbelt.Items[r].ID);
+			OUT(potionbelt.Items[r].Icon);
+			OUT_str(potionbelt.Items[r].Name);
+		}
+		// Nullify potion belt where server and client indexes diverge, with a client bias
+		for (r = EmuConstants::POTION_BELT_SIZE; r < consts::POTION_BELT_SIZE; ++r) {
+			eq->potionbelt.Items[r].ID = 0;
+			eq->potionbelt.Items[r].Icon = 0;
+			eq->potionbelt.Items[r].Name[0] = '\0';
+		}
+
 		//	OUT(unknown12852[8]);
 		//	OUT(unknown12864[76]);
+
 		OUT_str(name);
 		OUT_str(last_name);
 		OUT(guild_id);
@@ -1556,13 +1576,11 @@ namespace SoF
 		//EQApplicationPacket *packet = *p;
 		//const CharacterSelect_Struct *emu = (CharacterSelect_Struct *) packet->pBuffer;
 
-		int char_count;
+		int char_count = 0;
 		int namelen = 0;
-		for (char_count = 0; char_count < 10; char_count++) {
-			if (emu->name[char_count][0] == '\0')
-				break;
-			if (strcmp(emu->name[char_count], "<none>") == 0)
-				break;
+		for (char_count = 0; char_count < EmuConstants::CHARACTER_CREATION_LIMIT && char_count < consts::CHARACTER_CREATION_LIMIT; char_count++) {
+			if (emu->name[char_count][0] == '\0') { break; }
+			if (strcmp(emu->name[char_count], "<none>") == 0) { break; }
 			namelen += strlen(emu->name[char_count]);
 		}
 
@@ -1576,7 +1594,9 @@ namespace SoF
 		//structs::CharacterSelect_Struct *eq_head = (structs::CharacterSelect_Struct *) eq_buffer;
 
 		eq->char_count = char_count;
-		eq->total_chars = 10;
+		eq->total_chars = consts::CHARACTER_CREATION_LIMIT;
+		if (eq->total_chars > EmuConstants::CHARACTER_CREATION_LIMIT)
+			eq->total_chars = EmuConstants::CHARACTER_CREATION_LIMIT;
 
 		unsigned char *bufptr = (unsigned char *)eq->entries;
 		int r;

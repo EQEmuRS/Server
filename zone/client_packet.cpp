@@ -1191,8 +1191,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 	conn_state = ReceivedZoneEntry;
 
 	SetClientVersion(Connection()->GetClientVersion());
-	if (m_ClientVersion != ClientVersion::Unknown)
-		ClientVersionBit = 1 << (static_cast<unsigned int>(m_ClientVersion) - 1);
+	m_ClientVersionBit = ClientBitFromVersion(m_ClientVersion);
 
 	bool siv = m_inv.SetInventoryVersion(m_ClientVersion);
 	Log.Out(Logs::General, Logs::None, "%s inventory version to %s(%i)", (siv ? "Succeeded in setting" : "Failed to set"), ClientVersionName(m_ClientVersion), m_ClientVersion);
@@ -1736,7 +1735,7 @@ void Client::Handle_Connect_OP_ZoneEntry(const EQApplicationPacket *app)
 		safe_delete(outapp);
 	}
 
-	if (ClientVersionBit & BIT_UFAndLater) {
+	if (m_ClientVersionBit & BIT_UFAndLater) {
 		outapp = new EQApplicationPacket(OP_XTargetResponse, 8);
 		outapp->WriteUInt32(GetMaxXTargets());
 		outapp->WriteUInt32(0);
@@ -3183,19 +3182,19 @@ void Client::Handle_OP_Bandolier(const EQApplicationPacket *app)
 
 	BandolierCreate_Struct *bs = (BandolierCreate_Struct*)app->pBuffer;
 
-	switch (bs->action) {
-	case BandolierCreate:
+	switch (bs->Action) {
+	case bandolierCreate:
 		CreateBandolier(app);
 		break;
-	case BandolierRemove:
+	case bandolierRemove:
 		RemoveBandolier(app);
 		break;
-	case BandolierSet:
+	case bandolierSet:
 		SetBandolier(app);
 		break;
 	default:
-		Log.Out(Logs::General, Logs::None, "Uknown Bandolier action %i", bs->action);
-
+		Log.Out(Logs::General, Logs::None, "Unknown Bandolier action %i", bs->Action);
+		break; // 'default:' is not guaranteed to be indexed at the end of the jump table in all cases
 	}
 }
 
@@ -10442,16 +10441,17 @@ void Client::Handle_OP_PotionBelt(const EQApplicationPacket *app)
 	if (mptbs->Action == 0) {
 		const Item_Struct *BaseItem = database.GetItem(mptbs->ItemID);
 		if (BaseItem) {
-			m_pp.potionbelt.items[mptbs->SlotNumber].item_id = BaseItem->ID;
-			m_pp.potionbelt.items[mptbs->SlotNumber].icon = BaseItem->Icon;
-			strn0cpy(m_pp.potionbelt.items[mptbs->SlotNumber].item_name, BaseItem->Name, sizeof(BaseItem->Name));
-			database.SaveCharacterPotionBelt(this->CharacterID(), mptbs->SlotNumber, m_pp.potionbelt.items[mptbs->SlotNumber].item_id, m_pp.potionbelt.items[mptbs->SlotNumber].icon);
+			m_pp.potionbelt.Items[mptbs->SlotNumber].ID = BaseItem->ID;
+			m_pp.potionbelt.Items[mptbs->SlotNumber].Icon = BaseItem->Icon;
+			strn0cpy(m_pp.potionbelt.Items[mptbs->SlotNumber].Name, BaseItem->Name, sizeof(BaseItem->Name));
+			database.SaveCharacterPotionBelt(this->CharacterID(), mptbs->SlotNumber, m_pp.potionbelt.Items[mptbs->SlotNumber].ID, m_pp.potionbelt.Items[mptbs->SlotNumber].Icon);
 		}
 	}
 	else {
-		m_pp.potionbelt.items[mptbs->SlotNumber].item_id = 0;
-		m_pp.potionbelt.items[mptbs->SlotNumber].icon = 0;
-		strncpy(m_pp.potionbelt.items[mptbs->SlotNumber].item_name, "\0", 1);
+		m_pp.potionbelt.Items[mptbs->SlotNumber].ID = 0;
+		m_pp.potionbelt.Items[mptbs->SlotNumber].Icon = 0;
+		m_pp.potionbelt.Items[mptbs->SlotNumber].Name[0] = '\0';
+		//strncpy(m_pp.potionbelt.Items[mptbs->SlotNumber].Name, "\0", 1);
 	}
 }
 

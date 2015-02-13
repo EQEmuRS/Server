@@ -1,7 +1,7 @@
 /*
 EQEMu:  Everquest Server Emulator
 
-Copyright (C) 2001-2014 EQEMu Development Team (http://eqemulator.net)
+Copyright (C) 2001-2015 EQEMu Development Team (http://eqemulator.net)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,7 +25,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 // class EmuConstants
 //
-uint16 EmuConstants::InventoryMapSize(int16 indexMap) {
+uint16 EmuConstants::InventoryMapSize(int16 indexMap)
+{
 	switch (indexMap) {
 	case MapPossessions:
 		return MAP_POSSESSIONS_SIZE;
@@ -83,7 +84,8 @@ uint16 EmuConstants::InventoryMapSize(int16 indexMap) {
 }
 
 /*
-std::string EmuConstants::InventoryLocationName(Location_Struct location) {
+std::string EmuConstants::InventoryLocationName(Location_Struct location)
+{
 	// not ready for implementation...
 	std::string ret_str;
 	StringFormat(ret_str, "%s, %s, %s, %s", InventoryMapName(location.map), InventoryMainName(location.main), InventorySubName(location.sub), InventoryAugName(location.aug));
@@ -91,7 +93,8 @@ std::string EmuConstants::InventoryLocationName(Location_Struct location) {
 }
 */
 
-std::string EmuConstants::InventoryMapName(int16 indexMap) {
+std::string EmuConstants::InventoryMapName(int16 indexMap)
+{
 	switch (indexMap) {
 	case INVALID_INDEX:
 		return "Invalid Map";
@@ -150,7 +153,8 @@ std::string EmuConstants::InventoryMapName(int16 indexMap) {
 	}
 }
 
-std::string EmuConstants::InventoryMainName(int16 indexMain) {
+std::string EmuConstants::InventoryMainName(int16 indexMain)
+{
 	switch (indexMain) {
 	case INVALID_INDEX:
 		return "Invalid Main";
@@ -229,7 +233,8 @@ std::string EmuConstants::InventoryMainName(int16 indexMain) {
 	}
 }
 
-std::string EmuConstants::InventorySubName(int16 indexSub) {
+std::string EmuConstants::InventorySubName(int16 indexSub)
+{
 	if (indexSub == INVALID_INDEX)
 		return "Invalid Sub";
 
@@ -242,7 +247,8 @@ std::string EmuConstants::InventorySubName(int16 indexSub) {
 	return ret_str;
 }
 
-std::string EmuConstants::InventoryAugName(int16 indexAug) {
+std::string EmuConstants::InventoryAugName(int16 indexAug)
+{
 	if (indexAug == INVALID_INDEX)
 		return "Invalid Aug";
 
@@ -260,14 +266,16 @@ std::string EmuConstants::InventoryAugName(int16 indexAug) {
 // class EQLimits
 //
 // client validation
-bool EQLimits::IsValidPCClientVersion(ClientVersion clientVersion) {
+bool EQLimits::IsValidPCClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > ClientVersion::Unknown && clientVersion <= LAST_PC_CLIENT)
 		return true;
 
 	return false;
 }
 
-ClientVersion EQLimits::ValidatePCClientVersion(ClientVersion clientVersion) {
+ClientVersion EQLimits::ValidatePCClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > ClientVersion::Unknown && clientVersion <= LAST_PC_CLIENT)
 		return clientVersion;
 
@@ -275,14 +283,16 @@ ClientVersion EQLimits::ValidatePCClientVersion(ClientVersion clientVersion) {
 }
 
 // npc validation
-bool EQLimits::IsValidNPCClientVersion(ClientVersion clientVersion) {
+bool EQLimits::IsValidNPCClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > LAST_PC_CLIENT && clientVersion <= LAST_NPC_CLIENT)
 		return true;
 
 	return false;
 }
 
-ClientVersion EQLimits::ValidateNPCClientVersion(ClientVersion clientVersion) {
+ClientVersion EQLimits::ValidateNPCClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > LAST_PC_CLIENT && clientVersion <= LAST_NPC_CLIENT)
 		return clientVersion;
 
@@ -290,22 +300,47 @@ ClientVersion EQLimits::ValidateNPCClientVersion(ClientVersion clientVersion) {
 }
 
 // mob validation
-bool EQLimits::IsValidMobClientVersion(ClientVersion clientVersion) {
+bool EQLimits::IsValidMobClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > ClientVersion::Unknown && clientVersion <= LAST_NPC_CLIENT)
 		return true;
 
 	return false;
 }
 
-ClientVersion EQLimits::ValidateMobClientVersion(ClientVersion clientVersion) {
+ClientVersion EQLimits::ValidateMobClientVersion(ClientVersion clientVersion)
+{
 	if (clientVersion > ClientVersion::Unknown && clientVersion <= LAST_NPC_CLIENT)
 		return clientVersion;
-
+	
 	return ClientVersion::Unknown;
 }
 
+// database
+size_t EQLimits::CharacterCreationLimit(ClientVersion clientVersion)
+{
+	static const size_t local[CLIENT_VERSION_COUNT] = {
+/*Unknown*/		NOT_USED,
+/*Client62*/	NOT_USED,
+/*Titanium*/	Titanium::consts::CHARACTER_CREATION_LIMIT,
+/*SoF*/			SoF::consts::CHARACTER_CREATION_LIMIT,
+/*SoD*/			SoD::consts::CHARACTER_CREATION_LIMIT,
+/*UF*/			UF::consts::CHARACTER_CREATION_LIMIT,
+/*RoF*/			RoF::consts::CHARACTER_CREATION_LIMIT,
+/*RoF2*/		RoF2::consts::CHARACTER_CREATION_LIMIT,
+
+/*MobNPC*/		NOT_USED,
+/*MobMerc*/		NOT_USED,
+/*MobBot*/		NOT_USED,
+/*MobPet*/		NOT_USED
+	};
+
+	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
+}
+
 // inventory
-uint16 EQLimits::InventoryMapSize(int16 indexMap, ClientVersion clientVersion) {
+uint16 EQLimits::InventoryMapSize(int16 indexMap, ClientVersion clientVersion)
+{
 	// not all maps will have an instantiated container..some are references for queue generators (i.e., bazaar, mail, etc...)
 	// a zero '0' indicates a needed value..otherwise, change to '_NOTUSED' for a null value so indices requiring research can be identified
 	// ALL of these values need to be verified before pushing to live
@@ -704,7 +739,8 @@ uint16 EQLimits::InventoryMapSize(int16 indexMap, ClientVersion clientVersion) {
 	return NOT_USED;
 }
 
-uint64 EQLimits::PossessionsBitmask(ClientVersion clientVersion) {
+uint64 EQLimits::PossessionsBitmask(ClientVersion clientVersion)
+{
 	// these are for the new inventory system (RoF)..not the current (Ti) one...
 	// 0x0000000000200000 is SlotPowerSource (SoF+)
 	// 0x0000000080000000 is SlotGeneral9 (RoF+)
@@ -730,7 +766,8 @@ uint64 EQLimits::PossessionsBitmask(ClientVersion clientVersion) {
 	//return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-uint64 EQLimits::EquipmentBitmask(ClientVersion clientVersion) {
+uint64 EQLimits::EquipmentBitmask(ClientVersion clientVersion)
+{
 	static const uint64 local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		NOT_USED,
 /*62*/			0x00000000005FFFFF,
@@ -751,7 +788,8 @@ uint64 EQLimits::EquipmentBitmask(ClientVersion clientVersion) {
 	//return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-uint64 EQLimits::GeneralBitmask(ClientVersion clientVersion) {
+uint64 EQLimits::GeneralBitmask(ClientVersion clientVersion)
+{
 	static const uint64 local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		NOT_USED,
 /*62*/			0x000000007F800000,
@@ -772,7 +810,8 @@ uint64 EQLimits::GeneralBitmask(ClientVersion clientVersion) {
 	//return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-uint64 EQLimits::CursorBitmask(ClientVersion clientVersion) {
+uint64 EQLimits::CursorBitmask(ClientVersion clientVersion)
+{
 	static const uint64 local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		NOT_USED,
 /*62*/			0x0000000200000000,
@@ -793,7 +832,8 @@ uint64 EQLimits::CursorBitmask(ClientVersion clientVersion) {
 	//return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-bool EQLimits::AllowsEmptyBagInBag(ClientVersion clientVersion) {
+bool EQLimits::AllowsEmptyBagInBag(ClientVersion clientVersion)
+{
 	static const bool local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		false,
 /*62*/			false,
@@ -814,7 +854,8 @@ bool EQLimits::AllowsEmptyBagInBag(ClientVersion clientVersion) {
 	//return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-bool EQLimits::AllowsClickCastFromBag(ClientVersion clientVersion) {
+bool EQLimits::AllowsClickCastFromBag(ClientVersion clientVersion)
+{
 	static const bool local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		false,
 /*62*/			false,
@@ -835,7 +876,9 @@ bool EQLimits::AllowsClickCastFromBag(ClientVersion clientVersion) {
 }
 
 // items
-uint16 EQLimits::ItemCommonSize(ClientVersion clientVersion) {
+
+uint16 EQLimits::ItemCommonSize(ClientVersion clientVersion)
+{
 	static const uint16 local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		NOT_USED,
 /*62*/			EmuConstants::ITEM_COMMON_SIZE,
@@ -855,7 +898,8 @@ uint16 EQLimits::ItemCommonSize(ClientVersion clientVersion) {
 	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-uint16 EQLimits::ItemContainerSize(ClientVersion clientVersion) {
+uint16 EQLimits::ItemContainerSize(ClientVersion clientVersion)
+{
 	static const uint16 local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		NOT_USED,
 /*62*/			EmuConstants::ITEM_CONTAINER_SIZE,
@@ -875,7 +919,8 @@ uint16 EQLimits::ItemContainerSize(ClientVersion clientVersion) {
 	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
 }
 
-bool EQLimits::CoinHasWeight(ClientVersion clientVersion) {
+bool EQLimits::CoinHasWeight(ClientVersion clientVersion)
+{
 	static const bool local[CLIENT_VERSION_COUNT] = {
 /*Unknown*/		true,
 /*62*/			true,
@@ -890,66 +935,6 @@ bool EQLimits::CoinHasWeight(ClientVersion clientVersion) {
 /*Merc*/		true,
 /*Bot*/			true,
 /*Pet*/			true
-	};
-
-	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
-}
-
-uint32 EQLimits::BandoliersCount(ClientVersion clientVersion) {
-	static const uint32 local[CLIENT_VERSION_COUNT] = {
-/*Unknown*/		NOT_USED,
-/*62*/			EmuConstants::BANDOLIERS_COUNT,
-/*Titanium*/	EmuConstants::BANDOLIERS_COUNT,
-/*SoF*/			EmuConstants::BANDOLIERS_COUNT,
-/*SoD*/			EmuConstants::BANDOLIERS_COUNT,
-/*Underfoot*/	EmuConstants::BANDOLIERS_COUNT,
-/*RoF*/			EmuConstants::BANDOLIERS_COUNT,
-/*RoF2*/		EmuConstants::BANDOLIERS_COUNT,
-
-/*NPC*/			NOT_USED,
-/*Merc*/		NOT_USED,
-/*Bot*/			NOT_USED,
-/*Pet*/			NOT_USED
-	};
-
-	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
-}
-
-uint32 EQLimits::BandolierSize(ClientVersion clientVersion) {
-	static const uint32 local[CLIENT_VERSION_COUNT] = {
-/*Unknown*/		NOT_USED,
-/*62*/			EmuConstants::BANDOLIER_SIZE,
-/*Titanium*/	EmuConstants::BANDOLIER_SIZE,
-/*SoF*/			EmuConstants::BANDOLIER_SIZE,
-/*SoD*/			EmuConstants::BANDOLIER_SIZE,
-/*Underfoot*/	EmuConstants::BANDOLIER_SIZE,
-/*RoF*/			EmuConstants::BANDOLIER_SIZE,
-/*RoF2*/		EmuConstants::BANDOLIER_SIZE,
-
-/*NPC*/			NOT_USED,
-/*Merc*/		NOT_USED,
-/*Bot*/			NOT_USED,
-/*Pet*/			NOT_USED
-	};
-
-	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];
-}
-
-uint32 EQLimits::PotionBeltSize(ClientVersion clientVersion) {
-	static const uint32 local[CLIENT_VERSION_COUNT] = {
-/*Unknown*/		NOT_USED,
-/*62*/			EmuConstants::POTION_BELT_SIZE,
-/*Titanium*/	EmuConstants::POTION_BELT_SIZE,
-/*SoF*/			EmuConstants::POTION_BELT_SIZE,
-/*SoD*/			EmuConstants::POTION_BELT_SIZE,
-/*Underfoot*/	EmuConstants::POTION_BELT_SIZE,
-/*RoF*/			EmuConstants::POTION_BELT_SIZE,
-/*RoF2*/		EmuConstants::POTION_BELT_SIZE,
-
-/*NPC*/			NOT_USED,
-/*Merc*/		NOT_USED,
-/*Bot*/			NOT_USED,
-/*Pet*/			NOT_USED
 	};
 
 	return local[static_cast<unsigned int>(ValidateMobClientVersion(clientVersion))];

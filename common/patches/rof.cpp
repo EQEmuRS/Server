@@ -2286,58 +2286,49 @@ namespace RoF
 		outapp->WriteUInt8(0);				// Unknown
 		outapp->WriteUInt8(0);				// Unknown
 
-		outapp->WriteUInt32(structs::MAX_PLAYER_BANDOLIER);
+		outapp->WriteUInt32(consts::BANDOLIERS_SIZE);
 
-		for (uint32 r = 0; r < EmuConstants::BANDOLIERS_COUNT; r++)
-		{
-			outapp->WriteString(emu->bandoliers[r].name);
-
-			for (uint32 j = 0; j < EmuConstants::BANDOLIER_SIZE; ++j)
-			{
-				outapp->WriteString(emu->bandoliers[r].items[j].item_name);
-				outapp->WriteUInt32(emu->bandoliers[r].items[j].item_id);
-				if (emu->bandoliers[r].items[j].icon)
-				{
-					outapp->WriteSInt32(emu->bandoliers[r].items[j].icon);
+		// Copy bandoliers where server and client indexes converge
+		for (uint32 r = 0; r < EmuConstants::BANDOLIERS_SIZE && r < consts::BANDOLIERS_SIZE; ++r) {
+			outapp->WriteString(emu->bandoliers[r].Name);
+			for (uint32 j = 0; j < consts::BANDOLIER_ITEM_COUNT; ++j) { // Will need adjusting if 'server != client' is ever true
+				outapp->WriteString(emu->bandoliers[r].Items[j].Name);
+				outapp->WriteUInt32(emu->bandoliers[r].Items[j].ID);
+				if (emu->bandoliers[r].Items[j].Icon) {
+					outapp->WriteSInt32(emu->bandoliers[r].Items[j].Icon);
 				}
-				else
-				{
+				else {
 					// If no icon, it must send -1 or Treasure Chest Icon (836) is displayed
 					outapp->WriteSInt32(-1);
 				}
 			}
 		}
-
-		for (uint32 r = 0; r < structs::MAX_PLAYER_BANDOLIER - EmuConstants::BANDOLIERS_COUNT; r++)
-		{
+		// Nullify bandoliers where server and client indexes diverge, with a client bias
+		for (uint32 r = EmuConstants::BANDOLIERS_SIZE; r < consts::BANDOLIERS_SIZE; ++r) {
 			outapp->WriteString("");
-
-			for (uint32 j = 0; j < EmuConstants::BANDOLIER_SIZE; ++j)
-			{
+			for (uint32 j = 0; j < consts::BANDOLIER_ITEM_COUNT; ++j) { // Will need adjusting if 'server != client' is ever true
 				outapp->WriteString("");
 				outapp->WriteUInt32(0);
 				outapp->WriteSInt32(-1);
 			}
 		}
 
-		outapp->WriteUInt32(structs::MAX_POTIONS_IN_BELT);
+		outapp->WriteUInt32(consts::POTION_BELT_SIZE);
 
-		for (uint32 r = 0; r < EmuConstants::POTION_BELT_SIZE; r++)
-		{
-			outapp->WriteString(emu->potionbelt.items[r].item_name);
-			outapp->WriteUInt32(emu->potionbelt.items[r].item_id);
-			if (emu->potionbelt.items[r].icon)
-			{
-				outapp->WriteSInt32(emu->potionbelt.items[r].icon);
+		// Copy potion belt where server and client indexes converge
+		for (uint32 r = 0; r < EmuConstants::POTION_BELT_SIZE && r < consts::POTION_BELT_SIZE; ++r) {
+			outapp->WriteString(emu->potionbelt.Items[r].Name);
+			outapp->WriteUInt32(emu->potionbelt.Items[r].ID);
+			if (emu->potionbelt.Items[r].Icon) {
+				outapp->WriteSInt32(emu->potionbelt.Items[r].Icon);
 			}
-			else
-			{
+			else {
+				// If no icon, it must send -1 or Treasure Chest Icon (836) is displayed
 				outapp->WriteSInt32(-1);
 			}
 		}
-
-		for (uint32 r = 0; r < structs::MAX_POTIONS_IN_BELT - EmuConstants::POTION_BELT_SIZE; r++)
-		{
+		// Nullify potion belt where server and client indexes diverge, with a client bias
+		for (uint32 r = EmuConstants::POTION_BELT_SIZE; r < consts::POTION_BELT_SIZE; ++r) {
 			outapp->WriteString("");
 			outapp->WriteUInt32(0);
 			outapp->WriteSInt32(-1);
@@ -2912,13 +2903,11 @@ namespace RoF
 		//EQApplicationPacket *packet = *p;
 		//const CharacterSelect_Struct *emu = (CharacterSelect_Struct *) packet->pBuffer;
 
-		int char_count;
+		int char_count = 0;
 		int namelen = 0;
-		for (char_count = 0; char_count < 10; char_count++) {
-			if (emu->name[char_count][0] == '\0')
-				break;
-			if (strcmp(emu->name[char_count], "<none>") == 0)
-				break;
+		for (char_count = 0; char_count < EmuConstants::CHARACTER_CREATION_LIMIT && char_count < consts::CHARACTER_CREATION_LIMIT; char_count++) {
+			if (emu->name[char_count][0] == '\0') { break; }
+			if (strcmp(emu->name[char_count], "<none>") == 0) { break; }
 			namelen += strlen(emu->name[char_count]);
 		}
 
@@ -2932,7 +2921,9 @@ namespace RoF
 		//structs::CharacterSelect_Struct *eq_head = (structs::CharacterSelect_Struct *) eq_buffer;
 
 		eq->char_count = char_count;
-		//eq->total_chars = 10;
+		//eq->total_chars = consts::CHARACTER_CREATION_LIMIT;
+		//if (eq->total_chars > EmuConstants::CHARACTER_CREATION_LIMIT)
+		//	eq->total_chars = EmuConstants::CHARACTER_CREATION_LIMIT;
 
 		unsigned char *bufptr = (unsigned char *)eq->entries;
 		int r;

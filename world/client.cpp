@@ -86,11 +86,11 @@ Client::Client(EQStreamInterface* ieqs)
 	charid = 0;
 	pwaitingforbootup = 0;
 	StartInTutorial = false;
-	ClientVersionBit = 0;
-	numclients++;
 
-	if (eqs->GetClientVersion() != ClientVersion::Unknown)
-		ClientVersionBit = 1 << (static_cast<unsigned int>(eqs->GetClientVersion()) - 1);
+	m_ClientVersion = eqs->GetClientVersion();
+	m_ClientVersionBit = ClientBitFromVersion(m_ClientVersion);
+
+	numclients++;
 }
 
 Client::~Client() {
@@ -161,10 +161,9 @@ void Client::SendCharInfo() {
 		cle->SetOnline(CLE_Status_CharSelect);
 	}
 
-	if (ClientVersionBit & BIT_RoFAndLater)
+	if (m_ClientVersionBit & BIT_RoFAndLater)
 	{
-		// Can make max char per account into a rule - New to VoA
-		SendMaxCharCreate(10);
+		SendMaxCharCreate();
 		SendMembership();
 		SendMembershipSettings();
 	}
@@ -176,17 +175,21 @@ void Client::SendCharInfo() {
 	auto outapp = new EQApplicationPacket(OP_SendCharInfo, sizeof(CharacterSelect_Struct));
 	CharacterSelect_Struct* cs = (CharacterSelect_Struct*)outapp->pBuffer;
 
-	database.GetCharSelectInfo(GetAccountID(), cs, ClientVersionBit);
+	database.GetCharSelectInfo(GetAccountID(), cs, m_ClientVersionBit);
 
 	QueuePacket(outapp);
 	safe_delete(outapp);
 }
 
-void Client::SendMaxCharCreate(int max_chars) {
+void Client::SendMaxCharCreate()
+{
 	auto outapp = new EQApplicationPacket(OP_SendMaxCharacters, sizeof(MaxCharacters_Struct));
 	MaxCharacters_Struct* mc = (MaxCharacters_Struct*)outapp->pBuffer;
 
-	mc->max_chars = max_chars;
+	mc->max_chars = EQLimits::CharacterCreationLimit(m_ClientVersion);
+
+	if (mc->max_chars > EmuConstants::CHARACTER_CREATION_LIMIT)
+		mc->max_chars = EmuConstants::CHARACTER_CREATION_LIMIT;
 
 	QueuePacket(outapp);
 	safe_delete(outapp);
@@ -671,7 +674,7 @@ bool Client::HandleCharacterCreatePacket(const EQApplicationPacket *app) {
 	}
 	else
 	{
-		if(ClientVersionBit & BIT_TitaniumAndEarlier)
+		if(m_ClientVersionBit & BIT_TitaniumAndEarlier)
 			StartInTutorial = true;
 		SendCharInfo();
 	}
@@ -719,10 +722,10 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 	if(!pZoning && ew->return_home && !ew->tutorial) {
 		auto cs = new CharacterSelect_Struct;
 		memset(cs, 0, sizeof(CharacterSelect_Struct));
-		database.GetCharSelectInfo(GetAccountID(), cs, ClientVersionBit);
+		database.GetCharSelectInfo(GetAccountID(), cs, m_ClientVersionBit);
 		bool home_enabled = false;
 
-		for(int x = 0; x < 10; ++x)
+		for(int x = 0; x < EmuConstants::CHARACTER_CREATION_LIMIT; ++x)
 		{
 			if(strcasecmp(cs->name[x], char_name) == 0)
 			{
@@ -749,10 +752,10 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 	if(!pZoning && (RuleB(World, EnableTutorialButton) && (ew->tutorial || StartInTutorial))) {
 		auto cs = new CharacterSelect_Struct;
 		memset(cs, 0, sizeof(CharacterSelect_Struct));
-		database.GetCharSelectInfo(GetAccountID(), cs, ClientVersionBit);
+		database.GetCharSelectInfo(GetAccountID(), cs, m_ClientVersionBit);
 		bool tutorial_enabled = false;
 
-		for(int x = 0; x < 10; ++x)
+		for(int x = 0; x < EmuConstants::CHARACTER_CREATION_LIMIT; ++x)
 		{
 			if(strcasecmp(cs->name[x], char_name) == 0)
 			{
@@ -846,9 +849,9 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 
 	char ConnectionType;
 
-	if(ClientVersionBit & BIT_UFAndLater)
+	if(m_ClientVersionBit & BIT_UFAndLater)
 		ConnectionType = 'U';
-	else if(ClientVersionBit & BIT_SoFAndLater)
+	else if(m_ClientVersionBit & BIT_SoFAndLater)
 		ConnectionType = 'S';
 	else
 		ConnectionType = 'C';
@@ -872,7 +875,7 @@ bool Client::HandleEnterWorldPacket(const EQApplicationPacket *app) {
 
 	outapp2 = new EQApplicationPacket(OP_SetChatServer2);
 
-	if(ClientVersionBit & BIT_TitaniumAndEarlier)
+	if(m_ClientVersionBit & BIT_TitaniumAndEarlier)
 		ConnectionType = 'M';
 
 	sprintf(buffer,"%s,%i,%s.%s,%c%08X",
@@ -906,7 +909,7 @@ bool Client::HandleDeleteCharacterPacket(const EQApplicationPacket *app) {
 
 bool Client::HandleZoneChangePacket(const EQApplicationPacket *app) {
 	// HoT sends this to world while zoning and wants it echoed back.
-	if(ClientVersionBit & BIT_RoFAndLater)
+	if(m_ClientVersionBit & BIT_RoFAndLater)
 	{
 		QueuePacket(app);
 	}
@@ -1370,7 +1373,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	Log.Out(Logs::Detail, Logs::World_Server, "Beard: %d  Beardcolor: %d", cc->beard, cc->beardcolor);
 
 	/* Validate the char creation struct */
-	if (ClientVersionBit & BIT_SoFAndLater) {
+	if (m_ClientVersionBit & BIT_SoFAndLater) {
 		if (!CheckCharCreateInfoSoF(cc)) {
 			Log.Out(Logs::Detail, Logs::World_Server,"CheckCharCreateInfo did not validate the request (bad race/class/stats)");
 			return false;
@@ -1438,7 +1441,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 	pp.pvp = database.GetServerType() == 1 ? 1 : 0;
 
 	/* If it is an SoF Client and the SoF Start Zone rule is set, send new chars there */
-	if (ClientVersionBit & BIT_SoFAndLater) {
+	if (m_ClientVersionBit & BIT_SoFAndLater) {
 		Log.Out(Logs::Detail, Logs::World_Server,"Found 'SoFStartZoneID' rule setting: %i", RuleI(World, SoFStartZoneID));
 		if (RuleI(World, SoFStartZoneID) > 0) {
 			pp.zone_id = RuleI(World, SoFStartZoneID);
@@ -1454,7 +1457,7 @@ bool Client::OPCharCreate(char *name, CharCreate_Struct *cc)
 		}
 	} 	
 	/* use normal starting zone logic to either get defaults, or if startzone was set, load that from the db table.*/
-	bool ValidStartZone = database.GetStartZone(&pp, cc, ClientVersionBit & BIT_TitaniumAndEarlier);
+	bool ValidStartZone = database.GetStartZone(&pp, cc, m_ClientVersionBit & BIT_TitaniumAndEarlier);
 
 	if (!ValidStartZone){
 		return false;

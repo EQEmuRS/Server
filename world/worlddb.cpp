@@ -33,13 +33,14 @@ extern std::vector<RaceClassCombos> character_create_race_class_combos;
 
 
 // the current stuff is at the bottom of this function
-void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct* cs, uint32 ClientVersion) {
-	Inventory *inv;
+void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct* cs, uint32 ClientVersion)
+{
+	Inventory *inv = nullptr;
 	uint8 has_home = 0;
 	uint8 has_bind = 0;
 
 	/* Initialize Variables */
-	for (int i=0; i<10; i++) {
+	for (int i = 0; i < EmuConstants::CHARACTER_CREATION_LIMIT; i++) {
 		strcpy(cs->name[i], "<none>");
 		cs->zone[i] = 0;
 		cs->level[i] = 0;
@@ -72,9 +73,9 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct*
 		"zone_id		            "  // 19
 		"FROM                       "
 		"character_data             "
-		"WHERE `account_id` = %i ORDER BY `name` LIMIT 10   ", account_id);
+		"WHERE `account_id` = %i ORDER BY `name` LIMIT %u   ", account_id, EmuConstants::CHARACTER_CREATION_LIMIT);
 	auto results = database.QueryDatabase(cquery); int char_num = 0;
-	for (auto row = results.begin(); row != results.end(); ++row) {
+	for (auto row = results.begin(); row != results.end() && char_num < EmuConstants::CHARACTER_CREATION_LIMIT; ++row, ++char_num) {
 		PlayerProfile_Struct pp;
 		memset(&pp, 0, sizeof(PlayerProfile_Struct));
 
@@ -167,6 +168,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct*
 		}
 
 		/* Load Inventory */
+		// If we ensure that the material data is updated appropriately, we can do away with inventory loads
 		inv = new Inventory;
 		if (GetInventory(account_id, cs->name[char_num], inv))
 		{
@@ -237,11 +239,7 @@ void WorldDatabase::GetCharSelectInfo(uint32 account_id, CharacterSelect_Struct*
 		}
 
 		safe_delete(inv);
-
-		if (++char_num > 10)
-		{
-			break;
-		}
+		inv = nullptr;
 	}
 
 	return;

@@ -172,33 +172,34 @@ struct CharSelectEquip {
 ** Length: 1704 Bytes
 **
 */
-struct CharacterSelect_Struct {
-/*0000*/	uint32	race[10];				// Characters Race
-/*0040*/	//Color_Struct	cs_colors[10][9];	// Characters Equipment Colors
-/*0400*/	uint8	beardcolor[10];			// Characters beard Color
-/*0410*/	uint8	hairstyle[10];			// Characters hair style
-/*0420*/	//uint32	equip[10][9];			// 0=helm, 1=chest, 2=arm, 3=bracer, 4=hand, 5=leg, 6=boot, 7=melee1, 8=melee2 (Might not be)
-/*0000*/	CharSelectEquip	equip[10][9];
-/*0780*/	uint32	secondary[10];			// Characters secondary IDFile number
-/*0820*/	uint32	drakkin_heritage[10];		// added for SoF
-/*0860*/	uint32	drakkin_tattoo[10];			// added for SoF
-/*0900*/	uint32	drakkin_details[10];		// added for SoF
-/*0940*/	uint32	deity[10];				// Characters Deity
-/*0980*/	uint8	gohome[10];				// 1=Go Home available, 0=not
-/*0990*/	uint8	tutorial[10];			// 1=Tutorial available, 0=not
-/*1000*/	uint8	beard[10];				// Characters Beard Type
-/*1010*/	uint8	unknown902[10];			// 10x ff
-/*1020*/	uint32	primary[10];			// Characters primary IDFile number
-/*1060*/	uint8	haircolor[10];			// Characters Hair Color
-/*1070*/	uint8	unknown0962[2];			// 2x 00
-/*1072*/	uint32	zone[10];				// Characters Current Zone
-/*1112*/	uint8	class_[10];				// Characters Classes
-/*1022*/	uint8	face[10];				// Characters Face Type
-/*1032*/	char	name[10][64];			// Characters Names
-/*1672*/	uint8	gender[10];				// Characters Gender
-/*1682*/	uint8	eyecolor1[10];			// Characters Eye Color
-/*1692*/	uint8	eyecolor2[10];			// Characters Eye 2 Color
-/*1702*/	uint8	level[10];				// Characters Levels
+struct CharacterSelect_Struct
+{
+/*0000*/	uint32 race[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Race
+/*0040*/	//Color_Struct cs_colors[EmuConstants::CHARACTER_CREATION_LIMIT][9];	// Characters Equipment Colors
+/*0400*/	uint8 beardcolor[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters beard Color
+/*0410*/	uint8 hairstyle[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters hair style
+/*0420*/	//uint32 equip[EmuConstants::CHARACTER_CREATION_LIMIT][9];			// 0=helm, 1=chest, 2=arm, 3=bracer, 4=hand, 5=leg, 6=boot, 7=melee1, 8=melee2 (Might not be)
+/*0000*/	CharSelectEquip equip[EmuConstants::CHARACTER_CREATION_LIMIT][9];
+/*0780*/	uint32 secondary[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters secondary IDFile number
+/*0820*/	uint32 drakkin_heritage[EmuConstants::CHARACTER_CREATION_LIMIT];	// added for SoF
+/*0860*/	uint32 drakkin_tattoo[EmuConstants::CHARACTER_CREATION_LIMIT];		// added for SoF
+/*0900*/	uint32 drakkin_details[EmuConstants::CHARACTER_CREATION_LIMIT];		// added for SoF
+/*0940*/	uint32 deity[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Deity
+/*0980*/	uint8 gohome[EmuConstants::CHARACTER_CREATION_LIMIT];				// 1=Go Home available, 0=not
+/*0990*/	uint8 tutorial[EmuConstants::CHARACTER_CREATION_LIMIT];				// 1=Tutorial available, 0=not
+/*1000*/	uint8 beard[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Beard Type
+/*1010*/	uint8 unknown902[EmuConstants::CHARACTER_CREATION_LIMIT];			// 10x ff
+/*1020*/	uint32 primary[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters primary IDFile number
+/*1060*/	uint8 haircolor[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters Hair Color
+/*1070*/	uint8 unknown0962[2];												// 2x 00
+/*1072*/	uint32 zone[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Current Zone
+/*1112*/	uint8 class_[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Classes
+/*1022*/	uint8 face[EmuConstants::CHARACTER_CREATION_LIMIT];					// Characters Face Type
+/*1032*/	char name[EmuConstants::CHARACTER_CREATION_LIMIT][64];				// Characters Names
+/*1672*/	uint8 gender[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Gender
+/*1682*/	uint8 eyecolor1[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters Eye Color
+/*1692*/	uint8 eyecolor2[EmuConstants::CHARACTER_CREATION_LIMIT];			// Characters Eye 2 Color
+/*1702*/	uint8 level[EmuConstants::CHARACTER_CREATION_LIMIT];				// Characters Levels
 /*1712*/
 };
 
@@ -756,29 +757,45 @@ struct Tribute_Struct {
 	uint32 tier;
 };
 
-//len = 72
-struct BandolierItem_Struct {
-	uint32 item_id;
-	uint32 icon;
-	char item_name[64];
-};
-
-//len = 320
-enum { //bandolier item positions
-	bandolierMainHand = 0,
-	bandolierOffHand,
+// Bandolier item positions
+enum
+{
+	bandolierPrimary = 0,
+	bandolierSecondary,
 	bandolierRange,
 	bandolierAmmo
 };
-struct Bandolier_Struct {
-	char name[32];
-	BandolierItem_Struct items[EmuConstants::BANDOLIER_SIZE];
-};
-struct PotionBelt_Struct {
-	BandolierItem_Struct items[EmuConstants::POTION_BELT_SIZE];
+
+//len = 72
+struct BandolierItem_Struct
+{
+	uint32 ID;
+	uint32 Icon;
+	char Name[64];
 };
 
-struct MovePotionToBelt_Struct {
+//len = 320
+struct Bandolier_Struct
+{
+	char Name[32];
+	BandolierItem_Struct Items[EmuConstants::BANDOLIER_ITEM_COUNT];
+};
+
+//len = 72
+struct PotionBeltItem_Struct
+{
+	uint32 ID;
+	uint32 Icon;
+	char Name[64];
+};
+
+struct PotionBelt_Struct
+{
+	PotionBeltItem_Struct Items[EmuConstants::POTION_BELT_SIZE];
+};
+
+struct MovePotionToBelt_Struct
+{
 	uint32	Action;
 	uint32	SlotNumber;
 	uint32	ItemID;
@@ -1103,8 +1120,8 @@ struct PlayerProfile_Struct
 /*12800*/	uint32				expAA;
 /*12804*/	uint32				aapoints;			//avaliable, unspent
 /*12808*/	uint8				unknown12844[36];
-/*12844*/	Bandolier_Struct	bandoliers[EmuConstants::BANDOLIERS_COUNT];
-/*14124*/	uint8				unknown14160[4506];
+/*12844*/	Bandolier_Struct	bandoliers[EmuConstants::BANDOLIERS_SIZE];
+/*15308*/	uint8				unknown14160[3322];
 /*18630*/	SuspendedMinion_Struct	SuspendedMinion; // No longer in use
 /*19240*/	uint32				timeentitledonaccount;
 /*19244*/	PotionBelt_Struct	potionbelt;			//there should be 3 more of these
@@ -4104,30 +4121,35 @@ struct DynamicWall_Struct {
 /*80*/
 };
 
-enum {	//bandolier actions
-	BandolierCreate = 0,
-	BandolierRemove = 1,
-	BandolierSet = 2
+// Bandolier actions
+enum
+{
+	bandolierCreate = 0,
+	bandolierRemove,
+	bandolierSet
 };
 
-struct BandolierCreate_Struct {
-/*00*/	uint32	action;	//0 for create
-/*04*/	uint8	number;
-/*05*/	char	name[32];
-/*37*/	uint16	unknown37;	//seen 0x93FD
-/*39*/	uint8	unknown39;	//0
+struct BandolierCreate_Struct
+{
+/*00*/	uint32	Action;	//0 for create
+/*04*/	uint8	Number;
+/*05*/	char	Name[32];
+/*37*/	uint16	Unknown37;	//seen 0x93FD
+/*39*/	uint8	Unknown39;	//0
 };
 
-struct BandolierDelete_Struct {
-/*00*/	uint32	action;
-/*04*/	uint8	number;
-/*05*/	uint8	unknown05[35];
+struct BandolierDelete_Struct
+{
+/*00*/	uint32	Action;
+/*04*/	uint8	Number;
+/*05*/	uint8	Unknown05[35];
 };
 
-struct BandolierSet_Struct {
-/*00*/	uint32	action;
-/*04*/	uint8	number;
-/*05*/	uint8	unknown05[35];
+struct BandolierSet_Struct
+{
+/*00*/	uint32	Action;
+/*04*/	uint8	Number;
+/*05*/	uint8	Unknown05[35];
 };
 
 struct Arrow_Struct {

@@ -1,7 +1,7 @@
 /*
 EQEMu:  Everquest Server Emulator
 
-Copyright (C) 2001-2014 EQEMu Development Team (http://eqemulator.net)
+Copyright (C) 2001-2015 EQEMu Development Team (http://eqemulator.net)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -47,6 +47,9 @@ class EmuConstants {
 public:
 	// database
 	static const ClientVersion CHARACTER_CREATION_CLIENT = ClientVersion::RoF2; // adjust according to starting item placement and target client
+	
+	// This value should be at least 8 or Titanium will have issues (tested at 6)
+	static const size_t CHARACTER_CREATION_LIMIT = RoF2::consts::CHARACTER_CREATION_LIMIT;
 
 	// inventory
 	static uint16 InventoryMapSize(int16 indexMap);
@@ -145,15 +148,12 @@ public:
 	//static const uint32 RACE_BITMASK = 0;	// needs value
 
 	// BANDOLIERS_COUNT sets maximum limit..active limit will need to be handled by the appropriate AA
-	static const uint32 BANDOLIERS_COUNT = Titanium::consts::BANDOLIERS_COUNT;	// count = number of bandolier instances
-	static const uint32 BANDOLIER_SIZE = Titanium::consts::BANDOLIER_SIZE;		// size = number of equipment slots in bandolier instance
-	static const uint32 POTION_BELT_SIZE = Titanium::consts::POTION_BELT_SIZE;
+	static const uint32 BANDOLIERS_SIZE = RoF2::consts::BANDOLIERS_SIZE;				// size = number of bandolier instances
+	static const uint32 BANDOLIER_ITEM_COUNT = RoF2::consts::BANDOLIER_ITEM_COUNT;	// count = number of equipment slots in bandolier instance
+	
+	static const uint32 POTION_BELT_SIZE = RoF2::consts::POTION_BELT_SIZE;
 
 	static const size_t TEXT_LINK_BODY_LENGTH = 56;
-
-	// legacy-related functions
-	//static int ServerToPerlSlot(int slot);	// encode
-	//static int PerlToServerSlot(int slot);	// decode
 };
 
 class EQLimits {
@@ -174,6 +174,9 @@ public:
 	static bool IsValidMobClientVersion(ClientVersion clientVersion);
 	static ClientVersion ValidateMobClientVersion(ClientVersion clientVersion);
 
+	// database
+	static size_t CharacterCreationLimit(ClientVersion clientVersion);
+
 	// inventory
 	static uint16 InventoryMapSize(int16 indexMap, ClientVersion clientVersion);
 	static uint64 PossessionsBitmask(ClientVersion clientVersion);
@@ -190,11 +193,6 @@ public:
 
 	// player profile
 	static bool CoinHasWeight(ClientVersion clientVersion);
-
-	static uint32 BandoliersCount(ClientVersion clientVersion);
-	static uint32 BandolierSize(ClientVersion clientVersion);
-
-	static uint32 PotionBeltSize(ClientVersion clientVersion);
 };
 
 #endif /* EQ_DICTIONARY_H */

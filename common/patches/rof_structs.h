@@ -97,11 +97,6 @@ static const uint32 MAX_PLAYER_TRIBUTES = 5;
 static const uint32 MAX_TRIBUTE_TIERS = 10;
 static const uint32 TRIBUTE_NONE = 0xFFFFFFFF;
 
-static const uint32 MAX_PLAYER_BANDOLIER = 20;
-static const uint32 MAX_PLAYER_BANDOLIER_ITEMS = 4;
-
-static const uint32 MAX_POTIONS_IN_BELT = 5;
-
 static const uint32 MAX_GROUP_LEADERSHIP_AA_ARRAY = 16;
 static const uint32 MAX_RAID_LEADERSHIP_AA_ARRAY = 16;
 static const uint32 MAX_LEADERSHIP_AA_ARRAY = (MAX_GROUP_LEADERSHIP_AA_ARRAY+MAX_RAID_LEADERSHIP_AA_ARRAY);
@@ -880,38 +875,66 @@ struct Tribute_Struct {
 	uint32 tier;
 };
 
-struct BandolierItem_Struct {
-	char item_name[1];	// Variable Length
-	uint32 item_id;
-	uint32 icon;
-};
-
-//len = 72
-struct BandolierItem_Struct_Old {
-	uint32 item_id;
-	uint32 icon;
-	char item_name[64];
-};
-
-//len = 320
-enum { //bandolier item positions
-	bandolierMainHand = 0,
-	bandolierOffHand,
+// Bandolier item positions
+enum
+{
+	bandolierPrimary = 0,
+	bandolierSecondary,
 	bandolierRange,
 	bandolierAmmo
 };
-struct Bandolier_Struct {
-	char name[1];	// Variable Length
-	BandolierItem_Struct items[MAX_PLAYER_BANDOLIER_ITEMS];
+
+struct BandolierItem_Struct
+{
+	char Name[1];	// Variable Length
+	uint32 ID;
+	uint32 Icon;
 };
 
-struct Bandolier_Struct_Old {
-	char name[32];
-	BandolierItem_Struct items[MAX_PLAYER_BANDOLIER_ITEMS];
+//len = 72
+struct BandolierItem_Struct_Old
+{
+	uint32 ID;
+	uint32 Icon;
+	char Name[64];
 };
 
-struct PotionBelt_Struct {
-	BandolierItem_Struct items[MAX_POTIONS_IN_BELT];
+//len = 320
+struct Bandolier_Struct
+{
+	char Name[1];	// Variable Length
+	BandolierItem_Struct Items[consts::BANDOLIER_ITEM_COUNT];
+};
+
+struct Bandolier_Struct_Old
+{
+	char Name[32];
+	BandolierItem_Struct_Old Items[consts::BANDOLIER_ITEM_COUNT];
+};
+
+struct PotionBeltItem_Struct
+{
+	char Name[1];	// Variable Length
+	uint32 ID;
+	uint32 Icon;
+};
+
+//len = 72
+struct PotionBeltItem_Struct_Old
+{
+	uint32 ID;
+	uint32 Icon;
+	char Name[64];
+};
+
+struct PotionBelt_Struct
+{
+	PotionBeltItem_Struct Items[consts::POTION_BELT_SIZE];
+};
+
+struct PotionBelt_Struct_Old
+{
+	PotionBeltItem_Struct_Old Items[consts::POTION_BELT_SIZE];
 };
 
 struct GroupLeadershipAA_Struct {
@@ -1121,7 +1144,7 @@ union
 /*12949*/ uint32 aapoints;				// Unspent AA points - Seen 1
 /*12953*/ uint16 unknown_rof20;			//
 /*12955*/ uint32 bandolier_count;		// Seen 20
-/*12959*/ Bandolier_Struct bandoliers[MAX_PLAYER_BANDOLIER]; // [20] 740 bytes (Variable Name Sizes) - bandolier contents
+/*12959*/ Bandolier_Struct bandoliers[consts::BANDOLIERS_SIZE]; // [20] 740 bytes (Variable Name Sizes) - bandolier contents
 /*13699*/ uint32 potionbelt_count;		// Seen 5
 /*13703*/ PotionBelt_Struct potionbelt;	// [5] 45 bytes potion belt - (Variable Name Sizes)
 /*13748*/ int32 unknown_rof21;			// Seen -1
@@ -4113,30 +4136,35 @@ struct DynamicWall_Struct {
 /*80*/
 };
 
-enum {	//bandolier actions
-	BandolierCreate = 0,
-	BandolierRemove = 1,
-	BandolierSet = 2
+// Bandolier actions
+enum
+{
+	bandolierCreate = 0,
+	bandolierRemove,
+	bandolierSet
 };
 
-struct BandolierCreate_Struct {
-/*00*/	uint32	action;	//0 for create
-/*04*/	uint8	number;
-/*05*/	char	name[32];
-/*37*/	uint16	unknown37;	//seen 0x93FD
-/*39*/	uint8	unknown39;	//0
+struct BandolierCreate_Struct
+{
+/*00*/	uint32	Action;	//0 for create
+/*04*/	uint8	Number;
+/*05*/	char	Name[32];
+/*37*/	uint16	Unknown37;	//seen 0x93FD
+/*39*/	uint8	Unknown39;	//0
 };
 
-struct BandolierDelete_Struct {
-/*00*/	uint32	action;
-/*04*/	uint8	number;
-/*05*/	uint8	unknown05[35];
+struct BandolierDelete_Struct
+{
+/*00*/	uint32	Action;
+/*04*/	uint8	Number;
+/*05*/	uint8	Unknown05[35];
 };
 
-struct BandolierSet_Struct {
-/*00*/	uint32	action;
-/*04*/	uint8	number;
-/*05*/	uint8	unknown05[35];
+struct BandolierSet_Struct
+{
+/*00*/	uint32	Action;
+/*04*/	uint8	Number;
+/*05*/	uint8	Unknown05[35];
 };
 
 struct Arrow_Struct {
